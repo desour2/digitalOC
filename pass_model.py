@@ -10,7 +10,21 @@ def train_pass_model():
     """
 
     # 1. Load data
-    df = pd.read_csv("Data/pbp_2024_0.csv", low_memory=False)
+
+    pbp_files = [
+        pd.read_csv("Data/pbp_2024_0.csv", low_memory=False),
+        pd.read_csv("Data/pbp_2024_1.csv", low_memory=False),
+        pd.read_csv("Data/pbp_2023_0.csv", low_memory=False),
+        pd.read_csv("Data/pbp_2023_1.csv", low_memory=False),
+        pd.read_csv("Data/pbp_2022_0.csv", low_memory=False),
+        pd.read_csv("Data/pbp_2022_1.csv", low_memory=False),
+        pd.read_csv("Data/pbp_2021_0.csv", low_memory=False),
+        pd.read_csv("Data/pbp_2021_1.csv", low_memory=False),
+        pd.read_csv("Data/pbp_2020_0.csv", low_memory=False),
+        pd.read_csv("Data/pbp_2020_1.csv", low_memory=False),
+        # add more files if available
+    ]
+    df = pd.concat(pbp_files, ignore_index=True)
 
     # 2. Filter to pass plays
     df_pass = df[df['play_type'] == 'pass'].copy()
