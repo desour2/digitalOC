@@ -29,12 +29,19 @@ def suggest_play(situation):
     # Predict whether the play type for the given situation should be a run or pass
     prediction, confidence = predict_play(situation, trained_model=train_pbp_model()[0], feature_columns=train_pbp_model()[1])
 
+
+
     # Depending on the prediction, feed it into the run or pass model
     if prediction == 'run':
         run_prediction = predict_run_metrics(situation, trained_models=train_run_models())
         print(f"Run Prediction: {run_prediction}")
 
 
+
+    if prediction == 'pass':
+        # For pass plays, we would ideally call a function to predict pass metrics
+        # Since that function is not defined, we will just print a placeholder
+        print("Pass Prediction: [Placeholder for pass metrics prediction]")
 
 
 
