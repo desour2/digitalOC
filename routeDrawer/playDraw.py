@@ -1,12 +1,29 @@
+'''
+This currently uses a play from the FULLpersonnel{year}.csv files
+
+Input necessary to implement with model:
+- Down
+- Distance
+- Yard line
+- Play type (Run/Pass)
+
+- If run:
+- Formation
+- Personnel
+- Run gap
+- Run direction
+
+- If pass:
+- Formation
+- Personnel
+- Route
+- Receiver
+- Air yards
+'''
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-
-CSV_FILE = 'personnelData/FULLpersonnel2020.csv'
-
-GAME_ID_TO_VISUALIZE = '2020_01_ARI_SF'
-PLAY_ID_TO_VISUALIZE = 653
 
 def draw_field(ax, ydstogo, yardline_100):
     ax.set_facecolor('#3A9D23')
@@ -50,7 +67,7 @@ def draw_field(ax, ydstogo, yardline_100):
                 continue
                 
             ax.axhline(y_relative, color='white', linestyle='-', alpha=0.5)
-            ax.text(-24, y_relative + 0.5, str(label), color='white', fontsize=10)
+            ax.text(-24, y_relative + 0.5, str(int(label)), color='white', fontsize=10)
             
     # Draw hash marks
     for y in np.arange(1, max_y_visible, 1):
@@ -121,7 +138,7 @@ def get_start_position(position, pass_location, formation):
 
 def get_route_path(route_name, start_pos, position, location, air_yards):
     if pd.isna(route_name): route_name = "UNKNOWN"
-    route_key = route_name.upper()
+    route_key = str(route_name).upper()
     
     start_x, start_y = start_pos
     is_left_side = start_x < 0
@@ -194,7 +211,7 @@ def parse_personnel(personnel_str):
     if pd.isna(personnel_str):
         return counts
         
-    personnel_str = personnel_str.replace('"', '')
+    personnel_str = str(personnel_str).replace('"', '')
     parts = personnel_str.split(',')
     
     for part in parts:
@@ -300,52 +317,31 @@ def get_default_alignments(personnel_counts, formation, play_type='pass', locati
     return alignments
 
 
-def visualize_play(game_id, play_id):
-    if not os.path.exists(CSV_FILE):
-        print(f"Error: File not found: {CSV_FILE}")
-        print(f"Please make sure '{CSV_FILE}' is in the same directory.")
-        return
-        
-    try:
-        df = pd.read_csv(CSV_FILE, low_memory=False)
-    except Exception as e:
-        print(f"Error loading CSV: {e}")
-        return
+def visualize_play(play_data):
+    """
+    Accepts a dictionary 'play_data' containing all necessary play variables.
+    """
+    
+    # Extract variables safely using .get()
+    #game_id = play_data.get('game_id', 'Unknown Game')
+    #play_id = play_data.get('play_id', 'Unknown Play')
+    
+    formation = play_data.get('offense_formation')
+    personnel = play_data.get('offense_personnel')
+    position = play_data.get('involved_player_position') 
+    
+    # Helper to safely get float/int values
+    def get_num(key):
+        val = play_data.get(key)
+        return val if pd.notna(val) else None
 
-    play_matches = df[(df['game_id'] == game_id) & (df['play_id'] == play_id)]
+    down = get_num('down')
+    ydstogo = get_num('ydstogo')
+    yardline_100 = get_num('yardline_100')
     
-    if play_matches.empty:
-        print(f"Error: Play not found with:")
-        print(f"  game_id: {game_id}")
-        print(f"  play_id: {play_id}")
-        other_ids = df[['game_id', 'play_id']].head(5).to_dict('records')
-        print(f"Try one of these: {other_ids}")
-        return
-        
-    play = play_matches.iloc[0]
-    
-    if len(play_matches) > 1:
-        print(f"Warning: Found {len(play_matches)} duplicate plays for game {game_id}, play {play_id}.")
-        print(f"Displaying the first one.")
-        
-    formation = play['offense_formation']
-    personnel = play['offense_personnel']
-    position = play['involved_player_position'] 
-    
-    try:
-        # Use .loc to avoid potential Series/DataFrame ambiguity if data is bad
-        down = play.loc['down']
-        ydstogo = play.loc['ydstogo']
-        yardline_100 = play.loc['yardline_100']
-        down_str = f"{int(down)} & {int(ydstogo)}"
-        yardline_str = f"{int(yardline_100)} yds to EZ"
-    except (KeyError, ValueError, TypeError):
-        print(f"Warning: Could not find or read 'down', 'ydstogo', or 'yardline_100' columns.")
-        print(f"Please make sure your {CSV_FILE} file has these columns.")
-        down_str = "Down: ?"
-        yardline_str = "Ball: ?"
-        ydstogo = None
-        yardline_100 = None
+    # String formatting for display
+    down_str = f"{int(down) if down else '?'} & {int(ydstogo) if ydstogo else '?'}"
+    yardline_str = f"{int(yardline_100) if yardline_100 else '?'} yds to EZ"
     
     play_type = ''
     player_name = ''
@@ -353,13 +349,16 @@ def visualize_play(game_id, play_id):
     path_info_str = ''
     path = []
     
-    # Check if it's a pass play
-    if pd.notna(play['receiver']):
+    # Check if it's a pass play (based on receiver presence)
+    receiver = play_data.get('receiver')
+    rusher = play_data.get('rusher')
+    
+    if pd.notna(receiver):
         play_type = 'pass'
-        player_name = play['receiver']
-        route = play['route']
-        location = play['pass_location'] 
-        air_yards = play['air_yards']    
+        player_name = receiver
+        route = play_data.get('route')
+        location = play_data.get('pass_location') 
+        air_yards = get_num('air_yards')    
         plot_label = f'Targeted Receiver ({position})'
         path_info_str = f"Route: {str(route).upper()} ({air_yards} yds)"
         
@@ -367,11 +366,11 @@ def visualize_play(game_id, play_id):
         path = get_route_path(route, start_pos, position, location, air_yards)
         
     # Check if it's a run play
-    elif pd.notna(play['rusher']):
+    elif pd.notna(rusher):
         play_type = 'run'
-        player_name = play['rusher']
-        location = play['run_location'] 
-        run_gap = play['run_gap']
+        player_name = rusher
+        location = play_data.get('run_location') 
+        run_gap = play_data.get('run_gap')
         plot_label = f'Rusher ({position})'
         path_info_str = f"Run: {str(location).capitalize()} ({str(run_gap).capitalize()})"
         
@@ -379,23 +378,23 @@ def visualize_play(game_id, play_id):
         path = get_run_path(location, run_gap, start_pos)
         
     else:
-        print(f"Warning: Play {play_id} is not a run or pass (no rusher or receiver). Skipping path.")
+        # Fallback if neither run nor pass is clear
         start_pos = (0, -1) 
         plot_label = 'Unknown Play'
 
     print("\n" + "="*30)
-    print(f"{game_id} / {play_id}")
+    #print(f"{game_id} / {play_id}")
     print(f"  > Situation: {down_str} | {yardline_str}")
-    print(f"  > Formation Found: {formation}")
-    print(f"  > Personnel Found: {personnel}")
+    print(f"  > Formation: {formation}")
+    print(f"  > Personnel: {personnel}")
     print(f"  > Play Type: {play_type}")
-    print(f"  > Involved Player: {player_name} ({position})")
+    print(f"  > Involved: {player_name} ({position})")
     print("="*30 + "\n")
 
     fig, ax = plt.subplots(figsize=(7, 10))
     fig.patch.set_facecolor('#F0F0F0') 
     
-    # Draw the field first, passing situational data
+    # Draw the field
     draw_field(ax, ydstogo, yardline_100)
     
     # Determine QB position based on formation
@@ -415,7 +414,7 @@ def visualize_play(game_id, play_id):
     
     personnel_counts = parse_personnel(personnel)
     
-    # Subtract the targeted player from the count
+    # Subtract the targeted player from the count to avoid double plotting
     if position in personnel_counts:
         personnel_counts[position] -= 1
     
@@ -446,7 +445,7 @@ def visualize_play(game_id, play_id):
                  head_width=1, head_length=1, fc='cyan', ec='cyan', length_includes_head=True)
 
     title_text = (
-        f"Game: {game_id} | Play: {play_id}\n"
+        #f"Game: {game_id} | Play: {play_id}\n"
         f"{down_str} | {yardline_str}\n" 
         f"Player: {player_name}\n"
         f"Position: {position} | {path_info_str}\n" 
@@ -454,26 +453,46 @@ def visualize_play(game_id, play_id):
     )
     ax.set_title(title_text, fontsize=12)
     
-    # Re-order the legend to be more logical
+    # Re-order the legend
     handles, labels = ax.get_legend_handles_labels()
-    
-    # Filter out duplicate labels (e.g., if endzone/1st down aren't drawn)
     unique_labels = {}
     for h, l in zip(handles, labels):
         if l not in unique_labels:
             unique_labels[l] = h
             
-    # Re-build handles and labels
     handles = unique_labels.values()
     labels = unique_labels.keys()
     
     ax.legend(handles=handles, labels=labels, loc='lower left')
     
-    print(f"\nDisplaying visualization for Game: {game_id}, Play: {play_id}")
-    print(f"To see a different play, change the 'GAME_ID_TO_VISUALIZE' and 'PLAY_ID_TO_VISUALIZE' variables.")
-    
     plt.show()
 
 if __name__ == "__main__":
-    visualize_play(GAME_ID_TO_VISUALIZE, PLAY_ID_TO_VISUALIZE)
 
+    pass_play_input = {
+        #"play_id": 653,
+        #"game_id": "2020_01_ARI_SF",
+        "yardline_100": 25,
+        "down": 1,
+        "ydstogo": 10,
+        "yards_gained": 8,
+        "pass_length": "short",
+        "pass_location": "left",
+        "air_yards": 8,
+        #"yards_after_catch": 0,
+        "run_location": None,
+        "run_gap": None,
+        "epa": 0.75,
+        "pass_attempt": 1,
+        "touchdown": 0,
+        "complete_pass": 1,
+        "rusher": None,
+        "receiver": "D.Hopkins",
+        "offense_formation": "SHOTGUN",
+        "offense_personnel": "1 RB, 1 TE, 3 WR",
+        "route": "OUT",
+        #"defense_coverage_type": "MAN",
+        "involved_player_position": "WR"
+    }
+
+    visualize_play(pass_play_input)
