@@ -292,6 +292,8 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
             stratify=y_clean
         )
         
+        # new logistic regression model
+        # saved randomforest model as comment below
         # Logistic Regression performs better when all features are scaled
         scaler = StandardScaler()
         # use the X_clean columns
