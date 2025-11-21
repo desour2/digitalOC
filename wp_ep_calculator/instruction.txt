@@ -1,0 +1,9 @@
+1. make sure R and R script are installed in vscode or ide of your choice
+2. Open R terminal in ide
+3. run the command in install_R_packages.R to install libraries
+4. navigate to the correct directory
+5. run python3 wp_calculations.py to obtain win probabilities
+
+Notes:
+    you do not need to run calculate_wp.R! 
+    The python script automatically calls this script.

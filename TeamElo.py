@@ -2,27 +2,29 @@ import pandas as pd
 import numpy as np
 import nflreadpy as nfl
 
-pbp = pd.read_csv("data/pbp_2024.csv", low_memory=False)
-pbp_subset = pbp[
-    [
-        "old_game_id", "play_id",
-        "posteam", "defteam",
-        "posteam_score", "defteam_score", "score_differential",
-        "posteam_timeouts_remaining", "defteam_timeouts_remaining",
-        "down", "yards_gained", "ydstogo", "desc", "epa",
-        "pass_attempt", "rush_attempt", "qb_scramble", "sack",
-        "run_location", "run_gap", "pass_length", "pass_location",  
-        "play_type", "play", "air_yards"
-    ]
-]
 
-part = pd.read_csv("data/pbp_participation_2024.csv")
+#pd.read_csv("data/pbp_participation_2024.csv")
+merged = pd.read_csv("data/2024_0_EloData.csv") 
 
-merged = pd.merge(part, pbp_subset, on=["old_game_id", "play_id"], how="left")
 
 class PlayClassifier:
     @staticmethod
     def get_category(row):
+        """
+        Classify a play into a detailed offensive category.
+
+        Categories include:
+            - Special QB actions: qb_kneel, qb_spike, qb_scramble, sack
+            - Pass types: screen_pass, short_pass, mid_pass, deep_pass
+            - Run types: inside_run, outside_run
+            - Fallbacks: pass, run, or other
+
+        Parameters:
+            row (pd.Series): A row from a play-by-play DataFrame.
+
+        Returns:
+            str: Play category label.
+        """
         # ignore non‑offensive plays
         if row.get("play_type") not in ["pass", "run"]:
             return "other"
@@ -72,28 +74,79 @@ class PlayClassifier:
         
 class Team:
     def __init__(self, name: str, df: pd.DataFrame):
+        """
+        Initialize a Team object for filtering and calculating team-level stats.
+
+        Parameters:
+            name (str): Team abbreviation (e.g., "KC").
+            df (pd.DataFrame): Full play-by-play dataset.
+        """
 
         self.name = name
         self.df = df
 
     def offensive_snaps(self):
+        """
+        Count the number of offensive plays for the team.
+
+        Returns:
+            int: Number of unique offensive snaps (by play_id).
+        """
         return self.df[self.df["posteam"] == self.name]["play_id"].nunique()
 
     def offensive_personnel_counts(self):
+        """
+        Count occurrences of each offensive personnel grouping used by the team.
+
+        Returns:
+            pd.Series: Personnel groupings with counts.
+        """
         return self.df[self.df["posteam"] == self.name]["offense_personnel"].value_counts()
 
     def formation_counts(self):
+        """
+        Count the frequency of each offensive formation used by the team.
+
+        Returns:
+            pd.Series: Formation types with counts.
+        """
         return self.df[self.df["posteam"] == self.name]["offense_formation"].value_counts()
 
     def defensive_personnel_faced(self):
+        """
+        Count defensive personnel groupings the team faced while on offense.
+
+        Returns:
+            pd.Series: Defensive personnel groupings with counts.
+        """
         return self.df[self.df["posteam"] == self.name]["defense_personnel"].value_counts()
 
     def pressure_rate(self):
+        """
+        Compute the percentage of plays where the QB faced pressure.
+
+        Returns:
+            float: Pressure rate as a decimal (0 to 1).
+        """
+
         return self.df[self.df["posteam"] == self.name]["was_pressure"].mean()
     
     @staticmethod
     def success_rule(row):
-        """Return True if play is successful based on down and yards gained."""
+        """
+        Determine if a play is successful based on down and yardage gained.
+
+        Rules:
+            - 1st down: gain at least 50% of yards-to-go
+            - 2nd down: gain at least 70% of yards-to-go
+            - 3rd/4th down: gain 100% of yards-to-go
+
+        Parameters:
+            row (pd.Series): A row from the play-by-play DataFrame.
+
+        Returns:
+            bool: True if the play is successful, False otherwise.
+        """
         if row["down"] == 1:
             return row["yards_gained"] >= 0.5 * row["ydstogo"]
         elif row["down"] == 2:
@@ -104,6 +157,12 @@ class Team:
 
     
     def success_rate_by_down(self):
+        """
+        Calculate the play success rate for each down (1st to 4th).
+
+        Returns:
+            pd.Series: Success rate per down (index: down, value: rate).
+        """
         df = self.df[self.df["posteam"] == self.name].copy()
         df = df.dropna(subset=["down", "yards_gained", "ydstogo"])
 
@@ -118,22 +177,14 @@ class Team:
 
         return rates
     
-    def success_rate_by_down(self):
-        df = self.df[self.df["posteam"] == self.name].copy()
-        df = df.dropna(subset=["down", "yards_gained", "ydstogo"])
-
-        df["successful"] = df.apply(self.success_rule, axis=1)
-
-        rates = (
-            df.groupby("down")["successful"]
-            .mean()
-            .round(3)
-            .rename("success_rate")
-        )
-
-        return rates
     
     def success_rate_by_playType(self):
+        """
+        Calculate the success rate for each basic play type (run, pass).
+
+        Returns:
+            pd.Series: Success rate per play_type (e.g., pass, run).
+        """
         df = self.df[self.df["posteam"] == self.name].copy()
         df = df.dropna(subset=["down", "yards_gained", "ydstogo"])
 
@@ -149,6 +200,12 @@ class Team:
         return rates
     
     def playType_by_down(self):
+        """
+        Show the percentage distribution of play types used on each down.
+
+        Returns:
+            pd.DataFrame: Rows = down, Columns = play types, Values = percentages.
+        """
         # Filter to this team's offensive plays
         df = self.df[self.df["posteam"] == self.name].copy()
         
@@ -164,6 +221,12 @@ class Team:
         return fractions
     
     def blitz_rate_by_down(self):
+        """
+        Calculate the rate of blitzes faced on each down when on defense.
+
+        Returns:
+            pd.Series: Blitz rate per down (0–1).
+        """
         # Filter for plays where this team was on defense
         df = self.df[self.df["defteam"] == self.name].copy()
 
@@ -184,7 +247,16 @@ class Team:
         return blitz_rates
     
     def success_against_blitz(self):
-        
+        """
+        Measure offensive success against blitzes (defined as >4 rushers).
+
+        A play is unsuccessful if:
+            - Pressure was recorded
+            - Yards gained was negative
+
+        Returns:
+            float: Success rate against blitzes (0–1).
+        """
         df = self.df[self.df["posteam"] == self.name].copy()
 
         
@@ -205,6 +277,18 @@ class Team:
         return round(success_ratio, 3)
 
     def offensive_category_stats(self):
+        """
+        Aggregate play-level metrics by detailed play category.
+
+        Metrics:
+            - Number of plays
+            - Success rate
+            - Average yards gained
+            - Average EPA
+
+        Returns:
+            pd.DataFrame: Index = play_category, Columns = metrics.
+        """
         df = self.df[self.df["posteam"] == self.name].copy()
         df = df.dropna(subset=["play_category", "yards_gained", "down", "ydstogo"])
         df["successful"] = df.apply(self.success_rule, axis=1)
@@ -229,6 +313,12 @@ class Team:
     
 
     def __repr__(self):
+        """
+        Return a string representation of the team with number of offensive snaps.
+
+        Returns:
+            str: Representation string.
+        """
         return f"<Team {self.name}: {self.offensive_snaps()} offensive snaps>"
 
 merged["play_category"] = merged.apply(PlayClassifier.get_category, axis=1)
@@ -266,11 +356,23 @@ def compute_elo_per_play_type(category_stats: pd.DataFrame) -> dict:
 
     return elo_scores
 
-if __name__ == "__main__":
-    kc = Team("KC", merged)
-    category_stats = kc.offensive_category_stats()
-    per_type_elo = compute_elo_per_play_type(category_stats)
 
-    print(f"ELO Ratings by Play Type for {kc.name}:")
-    for play_type, rating in per_type_elo.items():
-        print(f"{play_type:<15}: {rating}")
+# Build ELO for all teams
+merged["play_category"] = merged.apply(PlayClassifier.get_category, axis=1)
+
+team_elos = {}
+for team in merged["posteam"].dropna().unique():
+    t = Team(team, merged)
+    stats = t.offensive_category_stats()
+    team_elos[team] = compute_elo_per_play_type(stats)
+
+
+elo_df = pd.DataFrame(team_elos).T  # Transpose so teams are rows
+
+# Save to CSV in the data directory
+elo_df.to_csv("data/team_elos_2024.csv", index_label="team")
+
+
+
+        
+

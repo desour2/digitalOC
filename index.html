@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DigitalOC</title>
+    <style>
+        /* Basic styling for layout */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f6;
+            display: grid;
+            place-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: #ffffff;
+            padding: 2rem 2.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+        }
+        h1 {
+            color: #222;
+        }
+        .team-selectors {
+            display: flex;
+            flex-direction: column; /* Stack dropdowns on small screens */
+            justify-content: center;
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        /* Make selectors align side-by-side on larger screens */
+        @media (min-width: 550px) {
+            .team-selectors {
+                flex-direction: row;
+            }
+        }
+        .selector-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            flex: 1; /* Make them grow equally */
+        }
+        label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        select {
+            font-size: 1rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            width: 100%; /* Make select boxes fill their container */
+        }
+        
+        /* Button Styling */
+        #submit-button {
+            background-color: #007aff;
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 2rem;
+            transition: background-color 0.2s ease;
+        }
+        #submit-button:hover {
+            background-color: #0056b3;
+        }
+        
+        /* Result Display Area */
+        #result-display {
+            margin-top: 1.5rem;
+            font-size: 1.1rem;
+            color: #333;
+            min-height: 1.5rem; /* Reserve space */
+        }
+        .error {
+            color: #d93025;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>DigitalOC</h1>
+        <p>Select the competing teams to get a play call.</p>
+        
+        <div class="team-selectors">
+            <div class="selector-group">
+                <label for="home-team">Home Team:</label>
+                <select id="home-team" name="home-team">
+                    <option value="">-- Select Home Team --</option>
+                </select>
+            </div>
+            
+            <div class="selector-group">
+                <label for="away-team">Away Team:</label>
+                <select id="away-team" name="away-team">
+                    <option value="">-- Select Away Team --</option>
+                </select>
+            </div>
+        </div>
+        
+        <button id="submit-button">Get Play Call</button>
+        
+        <div id="result-display"></div>
+        
+    </div>
+
+    <script>
+        // Array of all 32 NFL teams
+        const nflTeams = [
+            // AFC
+            "Buffalo Bills", "Miami Dolphins", "New England Patriots", "New York Jets",
+            "Baltimore Ravens", "Cincinnati Bengals", "Cleveland Browns", "Pittsburgh Steelers",
+            "Houston Texans", "Indianapolis Colts", "Jacksonville Jaguars", "Tennessee Titans",
+            "Denver Broncos", "Kansas City Chiefs", "Las Vegas Raiders", "Los Angeles Chargers",
+            // NFC
+            "Dallas Cowboys", "New York Giants", "Philadelphia Eagles", "Washington Commanders",
+            "Chicago Bears", "Detroit Lions", "Green Bay Packers", "Minnesota Vikings",
+            "Atlanta Falcons", "Carolina Panthers", "New Orleans Saints", "Tampa Bay Buccaneers",
+            "Arizona Cardinals", "Los Angeles Rams", "San Francisco 49ers", "Seattle Seahawks"
+        ];
+
+        // Sort teams alphabetically
+        nflTeams.sort();
+
+        // Get the select elements
+        const homeTeamSelect = document.getElementById('home-team');
+        const awayTeamSelect = document.getElementById('away-team');
+
+        // Function to populate a select element with teams
+        function populateDropdown(selectElement) {
+            nflTeams.forEach(team => {
+                const option = document.createElement('option');
+                option.value = team;
+                option.textContent = team;
+                selectElement.appendChild(option);
+            });
+        }
+
+        // Populate both dropdowns
+        populateDropdown(homeTeamSelect);
+        populateDropdown(awayTeamSelect);
+
+        
+        // --- NEW JAVASCRIPT ---
+        
+        // Get the new button and result elements
+        const submitButton = document.getElementById('submit-button');
+        const resultDisplay = document.getElementById('result-display');
+        
+        // Add a 'click' event listener to the button
+        submitButton.addEventListener('click', () => {
+            // Get the selected value from each dropdown
+            const homeTeam = homeTeamSelect.value;
+            const awayTeam = awayTeamSelect.value;
+            
+            // Clear previous results/errors
+            resultDisplay.textContent = '';
+            resultDisplay.classList.remove('error');
+
+            // Simple validation
+            if (!homeTeam || !awayTeam) {
+                resultDisplay.textContent = 'Please select both a home and away team.';
+                resultDisplay.classList.add('error');
+                return; // Stop the function
+            }
+            
+            if (homeTeam === awayTeam) {
+                resultDisplay.textContent = 'Teams cannot play against themselves. Please select two different teams.';
+                resultDisplay.classList.add('error');
+                return; // Stop the function
+            }
+
+            // Log the values to the console
+            console.log('--- Matchup Selected ---');
+            console.log('Home Team:', homeTeam);
+            console.log('Away Team:', awayTeam);
+            
+            // Display the selected values on the page
+            resultDisplay.textContent = `Analyzing matchup: ${homeTeam} (Home) vs. ${awayTeam} (Away)`;
+            
+            // This is where you would send the data to your backend API
+            // (e.g., using fetch())
+            
+        });
+
+    </script>
+
+</body>
+</html>

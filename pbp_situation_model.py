@@ -5,6 +5,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report
+from TeamElo import PlayClassifier, team_elos
 
 
 def train_pbp_model():
@@ -17,11 +18,19 @@ def train_pbp_model():
     # Filter columns that only contain "run" or "pass" for play_type
     df_filtered = df[df['play_type'].isin(['run', 'pass'])]
     print(f"Number of rows after filtering for run/pass plays: {df_filtered.shape[0]}")
+    df_filtered["play_category"] = df_filtered.apply(PlayClassifier.get_category, axis=1)
 
-    # (game situation) x variables using categories 1-3 for now
-    X = df_filtered[['down', 'ydstogo', 'yardline_100', 'goal_to_go', 'quarter_seconds_remaining',
-            'half_seconds_remaining', 'game_seconds_remaining', 'score_differential', 'wp',
-            'ep', 'posteam_timeouts_remaining', 'defteam_timeouts_remaining', 'posteam', 'defteam']]
+    # Create a column in the input variables for the Offense Team's ELO Rating
+    def get_elo(row):
+        team = row["posteam"]
+        category = row["play_category"]
+        return team_elos.get(team, {}).get(category, 1000.0)
+
+    # x variables
+    df_filtered["elo_score"] = df_filtered.apply(get_elo, axis=1)
+    X = df_filtered[['down', 'ydstogo', 'yardline_100', 'goal_to_go', 'quarter_seconds_remaining','half_seconds_remaining', 
+                     'game_seconds_remaining', 'score_differential', 'posteam_timeouts_remaining', 'defteam_timeouts_remaining', 
+                     'posteam', 'defteam', 'elo_score']]
     print(X.head(10))
 
     # y variables
@@ -82,18 +91,16 @@ def predict_play(situation, trained_model, feature_columns):
     print(f"Half seconds remaining: {situation[5]}")
     print(f"Game seconds remaining: {situation[6]}")
     print(f"Score differential: {situation[7]}")
-    print(f"Win probability: {situation[8] * 100:.2f}%")
-    print(f"Expected points: {situation[9]}")
-    print(f"Offensive team timeouts remaining: {situation[10]}")
-    print(f"Defensive team timeouts remaining: {situation[11]}")
-    print(f"Offensive team: {situation[12]}")
-    print(f"Defensive team: {situation[13]}")
+    print(f"Offensive team timeouts remaining: {situation[8]}")
+    print(f"Defensive team timeouts remaining: {situation[9]}")
+    print(f"Offensive team: {situation[10]}")
+    print(f"Defensive team: {situation[11]}")
     print()
 
     # Convert input to DataFrame with correct column names
-    situation_df = pd.DataFrame([situation], columns=['down', 'ydstogo', 'yardline_100', 'goal_to_go', 'quarter_seconds_remaining', 
-                                                      'half_seconds_remaining', 'game_seconds_remaining', 'score_differential', 'wp', 
-                                                      'ep', 'posteam_timeouts_remaining', 'defteam_timeouts_remaining', 'posteam', 'defteam'])
+    situation_df = pd.DataFrame([situation], columns=['down', 'ydstogo', 'yardline_100', 'goal_to_go', 'quarter_seconds_remaining',
+                                                      'half_seconds_remaining', 'game_seconds_remaining', 'score_differential', 
+                                                      'posteam_timeouts_remaining', 'defteam_timeouts_remaining', 'posteam', 'defteam'])
 
     # Apply same categorical encoding as training
     categorical_cols = ['posteam', 'defteam']
@@ -120,4 +127,3 @@ def predict_play(situation, trained_model, feature_columns):
     # Return prediction and confidence
     return prediction[0], prediction_proba[0]  
 
-    

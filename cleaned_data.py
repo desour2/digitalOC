@@ -1,56 +1,49 @@
 import pandas as pd
+import os
 
 # Open the CSV file
 df = pd.read_csv("data/pbp_2024_0.csv", low_memory=False)
 
-'''
-Inputs for model:
-Down (down)
-Distance (ydstogo)
-Time (quarter_seconds_remaining, half_seconds_remaining, game_seconds_remaining)
-Quarter (qtr)
-Yard line (yardline_100)
-Difference of score between posteam and defteam (score_differential) -> (- if losing, + if winning)
-Possessing team (posteam)
-Defending team (defteam)
-Timeouts remaining (posteam_timeouts_remaining)
-
-Run Outcome / Run Called
-Yards gained
-Touchdown? (rush_touchdown) (1, 0)
-First down (first_down_run) (1, 0)
-Formation
-Run play? (rush_attempt) (1 if run, 0 if not)
-Type of run play (dive, sweep, etc)
-run_location (left, middle, right)
-run_gap (end, guard, tackle)
-tackled_for_loss (1,0)
-wpa	Win probability added (WPA) for the posteam.
-epa	Expected points added (EPA) by the posteam for the given play.
-'''
-
-
-# Select relevant columns for analysis
 relevant_columns = [
-    'game_id', 'play_id', 'home_team', 'away_team', 'game_date', 'down',
-    'ydstogo', 'quarter_seconds_remaining', 'half_seconds_remaining',
-    'game_seconds_remaining', 'qtr', 'yardline_100', 'posteam_timeouts_remaining', 
-    'score_differential', 'posteam', 'defteam', 'posteam_timeouts_remaining'
+    "old_game_id", "play_id",
+    "posteam", "defteam",
+    "play_type", "pass_attempt", "rush_attempt", "air_yards", "run_gap",
+    "qb_kneel", "qb_spike", "qb_scramble", "sack",
+    "down", "yards_gained", "ydstogo",
+    "epa"
 ]
 
 # Pull relevant data
-# Clean any rows with 'NaN' data
 df_relevant = df[relevant_columns]
-df_cleaned = df_relevant.dropna()
 
-# Compare dataframe sizes after cleaning
-print("Size of dataframe before cleaning: ", df_relevant.shape)
+# Only remove rows where ESSENTIAL columns are NaN
+essential_columns = ["old_game_id", "play_id", "posteam", "defteam", "play_type", "down"]
+df_cleaned = df_relevant.dropna(subset=essential_columns).copy()  # ADD .copy() HERE
+
+# Now safely fill NaN values without warnings
+df_cleaned['air_yards'] = df_cleaned['air_yards'].fillna(0)
+df_cleaned['run_gap'] = df_cleaned['run_gap'].fillna('none')
+df_cleaned['qb_kneel'] = df_cleaned['qb_kneel'].fillna(0)
+df_cleaned['qb_spike'] = df_cleaned['qb_spike'].fillna(0)
+df_cleaned['qb_scramble'] = df_cleaned['qb_scramble'].fillna(0)
+df_cleaned['sack'] = df_cleaned['sack'].fillna(0)
+
+# Save your DataFrame to a new CSV file
+df_cleaned.to_csv("data/2024_0_EloData.csv", index=False)
+
+# Verification
+file_path = "data/2024_0_EloData.csv"
+if os.path.exists(file_path):
+    file_size = os.path.getsize(file_path)
+    print(f"✓ File created: {file_path}")
+    print(f"✓ File size: {file_size} bytes")
+    
+    saved_df = pd.read_csv(file_path)
+    print(f"✓ Saved file has {len(saved_df)} rows and {len(saved_df.columns)} columns")
+    print("\nFirst 5 rows:")
+    print(saved_df.head())
+else:
+    print("✗ File was not created!")
+
+print("\nSize of dataframe before cleaning: ", df_relevant.shape)
 print("Size of dataframe after cleaning: ", df_cleaned.shape)
-
-# Print the first 50 rows of the cleaned data
-print(df_cleaned.head(50))
-
-# print(type(df))
-# print(type(df_relevant))
-# print(type(df_cleaned))
-
