@@ -186,6 +186,13 @@ def merge_pbp_with_player_info():
         print(f"There are {new_missing_count} positions still missing.")
 
     
+    print("\nDropping rows where 'involved_player_position' is still missing...")
+    rows_before_drop = len(merged_df)
+    merged_df = merged_df.dropna(subset=['involved_player_position'])
+    rows_after_drop = len(merged_df)
+    rows_dropped = rows_before_drop - rows_after_drop
+    print(f"Dropped {rows_dropped} rows. New total rows: {rows_after_drop}")
+
     print("\nCleaning up final columns...")
     
     # List of all temporary columns to drop

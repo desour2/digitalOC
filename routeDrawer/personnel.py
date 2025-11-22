@@ -6,8 +6,8 @@ import sys
 
 # 1. PBP (Play-by-Play) files and columns
 PBP_FILES = [
-    '../data/pbp_2020_0.csv', 
-    '../data/pbp_2020_1.csv'
+    '../data/pbp_2021_0.csv', 
+    '../data/pbp_2021_1.csv'
 ]
 # We MUST include 'play_type' for filtering.
 # We MUST include 'game_id' AND 'play_id' for merging.
@@ -30,11 +30,12 @@ PBP_COLS = [
     'receiver',
     'yardline_100',
     'down',
-    'ydstogo'
+    'ydstogo',
+    'interception'
 ]
 
 # 2. Participation file and columns
-PARTICIPATION_FILE = '../data/pbp_participation_2020.csv'
+PARTICIPATION_FILE = '../data/pbp_participation_2021.csv'
 # We MUST include 'nflverse_game_id' AND 'play_id' for merging.
 PARTICIPATION_COLS = [
     'nflverse_game_id', 
@@ -50,7 +51,7 @@ PARTICIPATION_COLS = [
 # 3. Filter query
 PBP_FILTER_QUERY = "play_type == 'pass' or play_type == 'run'"
 
-OUTPUT_FILENAME = 'personnelData/personnel2020.csv'
+OUTPUT_FILENAME = 'personnelData/personnel2021.csv'
 
 def load_and_concat(files, columns):
     """
