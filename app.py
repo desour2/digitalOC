@@ -19,7 +19,7 @@ pass_model = None
 pass_feature_columns = None
 
 
-def load_all_models():
+def train_all_models():
     """Train all models on application startup."""
     global pbp_model, pbp_feature_columns, run_models, pass_model, pass_feature_columns
     
@@ -72,7 +72,7 @@ def load_all_models():
 
 
 # Train all models when the application starts
-load_all_models() 
+train_all_models() 
 
 
 @app.route("/suggestPlay/<situation>", methods=['GET'])
