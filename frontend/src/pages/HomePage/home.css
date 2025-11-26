@@ -1,0 +1,88 @@
+/* Import a modern font - replace with your preferred font */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Inter:wght@400;500&display=swap');
+
+.home-container {
+    min-height: 100vh;
+    background-image: url(../../../public/background.png);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+}
+
+/* Logo in upper left corner */
+.logo-icon {
+    position: absolute;
+    top: 40px;
+    left: 70px;
+    width: 140px;
+    height: auto;
+}
+
+/* Main content wrapper */
+.content-wrapper {
+    position: absolute;
+    bottom: 100px;
+    left: 70px;
+    text-align: left;
+}
+
+/* Title styling */
+.title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 80px;
+    font-weight: 900;
+    margin: 0;
+    margin-bottom: 20px;
+    letter-spacing: 2px;
+    line-height: 1;
+}
+
+.title-digital {
+    color: #ffffff;
+}
+
+.title-oc {
+    color: #d946ef;
+    margin-left: 0;
+}
+
+/* Subtitle styling */
+.subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 32px;
+    font-weight: 400;
+    color: #ffffff;
+    margin: 0;
+    margin-bottom: 50px;
+}
+
+/* Begin button styling */
+.begin-button {
+    position: absolute;
+    bottom: 100px;
+    right: 100px;
+    background: linear-gradient(135deg, #d946ef, #c026d3);
+    color: #ffffff;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    border: none;
+    border-radius: 50px;
+    padding: 18px 60px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    box-shadow: 0 4px 15px rgba(217, 70, 239, 0.4);
+}
+
+.begin-button:hover {
+    background: linear-gradient(135deg, #e879f9, #d946ef);
+    box-shadow: 0 6px 20px rgba(217, 70, 239, 0.6);
+    transform: translateY(-2px);
+}
+
+.begin-button:active {
+    transform: translateY(0);
+}
