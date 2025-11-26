@@ -309,5 +309,8 @@ def train_pass_model():
     return model, feature_cols, df_pass
 
 
+def predict_pass_metrics(situation, trained_model, feature_cols, df_pass_processed):
+    pass
+
 if __name__ == "__main__":
     model, features, df_pass_processed = train_pass_model()
