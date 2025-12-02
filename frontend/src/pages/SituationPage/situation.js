@@ -1,11 +1,50 @@
 import React, {useRef, useEffect, useState} from 'react';
 import TeamDropdownMenu from '../../components/team_dropdown';
+import './situation.css';
+
+// Import team logos
+import ARILogo from '../../logos/ARI.png';
+import ATLLogo from '../../logos/ATL.png';
+import BALLogo from '../../logos/BAL.png';
+import BUFLogo from '../../logos/BUF.png';
+import CARLogo from '../../logos/CAR.png';
+import CHILogo from '../../logos/CHI.png';
+import CINLogo from '../../logos/CIN.png';
+import CLELogo from '../../logos/CLE.png';
+import DALLogo from '../../logos/DAL.png';
+import DENLogo from '../../logos/DEN.png';
+import DETLogo from '../../logos/DET.png';
+import GBLogo from '../../logos/GB.png';
+import HOULogo from '../../logos/HOU.png';
+import INDLogo from '../../logos/IND.png';
+import JAXLogo from '../../logos/JAX.png';
+import KCLogo from '../../logos/KC.png';
+import LACLogo from '../../logos/LAC.png';
+import LARLogo from '../../logos/LAR.png';
+import LVLogo from '../../logos/LV.png';
+import MIALogo from '../../logos/MIA.png';
+import MINLogo from '../../logos/MIN.png';
+import NELogo from '../../logos/NE.png';
+import NOLogo from '../../logos/NO.png';
+import NYGLogo from '../../logos/NYG.png';
+import NYJLogo from '../../logos/NYJ.png';
+import PHILogo from '../../logos/PHI.png';
+import PITLogo from '../../logos/PIT.png';
+import SEALogo from '../../logos/SEA.png';
+import SFLogo from '../../logos/SF.png';
+import TBLogo from '../../logos/TB.png';
+import TENLogo from '../../logos/TEN.png';
+import WASLogo from '../../logos/WAS.png';
 
 const Situation = () => {
     
     // Team attributes
     const [offenseTeam, setOffenseTeam] = useState("");
     const [defenseTeam, setDefenseTeam] = useState("");
+    
+    // Team selector modal state
+    const [showTeamSelector, setShowTeamSelector] = useState(false);
+    const [selectorType, setSelectorType] = useState(''); // 'offense' or 'defense'
 
     // Down and distance attributes
     const [down, setDown] = useState("");
@@ -26,6 +65,64 @@ const Situation = () => {
     // Timeout attributes
     const [offenseTimeouts, setOffenseTimeouts] = useState(""); 
     const [defenseTimeouts, setDefenseTimeouts] = useState(""); 
+    
+    // Team data with logos
+    const teams = [
+        { abbr: 'ARI', logo: ARILogo },
+        { abbr: 'ATL', logo: ATLLogo },
+        { abbr: 'BAL', logo: BALLogo },
+        { abbr: 'BUF', logo: BUFLogo },
+        { abbr: 'CAR', logo: CARLogo },
+        { abbr: 'CHI', logo: CHILogo },
+        { abbr: 'CIN', logo: CINLogo },
+        { abbr: 'CLE', logo: CLELogo },
+        { abbr: 'DAL', logo: DALLogo },
+        { abbr: 'DEN', logo: DENLogo },
+        { abbr: 'DET', logo: DETLogo },
+        { abbr: 'GB', logo: GBLogo },
+        { abbr: 'HOU', logo: HOULogo },
+        { abbr: 'IND', logo: INDLogo },
+        { abbr: 'JAX', logo: JAXLogo },
+        { abbr: 'KC', logo: KCLogo },
+        { abbr: 'LAC', logo: LACLogo },
+        { abbr: 'LAR', logo: LARLogo },
+        { abbr: 'LV', logo: LVLogo },
+        { abbr: 'MIA', logo: MIALogo },
+        { abbr: 'MIN', logo: MINLogo },
+        { abbr: 'NE', logo: NELogo },
+        { abbr: 'NO', logo: NOLogo },
+        { abbr: 'NYG', logo: NYGLogo },
+        { abbr: 'NYJ', logo: NYJLogo },
+        { abbr: 'PHI', logo: PHILogo },
+        { abbr: 'PIT', logo: PITLogo },
+        { abbr: 'SEA', logo: SEALogo },
+        { abbr: 'SF', logo: SFLogo },
+        { abbr: 'TB', logo: TBLogo },
+        { abbr: 'TEN', logo: TENLogo },
+        { abbr: 'WAS', logo: WASLogo },
+    ];
+    
+    // Get team logo by abbreviation
+    const getTeamLogo = (abbr) => {
+        const team = teams.find(t => t.abbr === abbr);
+        return team ? team.logo : null;
+    };
+    
+    // Open team selector
+    const openTeamSelector = (type) => {
+        setSelectorType(type);
+        setShowTeamSelector(true);
+    };
+    
+    // Select team from modal
+    const selectTeam = (abbr) => {
+        if (selectorType === 'offense') {
+            setOffenseTeam(abbr);
+        } else if (selectorType === 'defense') {
+            setDefenseTeam(abbr);
+        }
+        setShowTeamSelector(false);
+    };
     
     async function calculateQtrSeconds(minutes, seconds) {
         seconds = parseInt(seconds);
@@ -90,282 +187,65 @@ const Situation = () => {
     }   
 
     return (
-        <div>
-            {/* ---- Header Section ---- */}
-            <div style={{ paddingLeft: "20px", paddingTop: "20px" }}>
-                <h1>DigitalOC</h1>
-                <h4>
-                    An app that uses play-by-play data and team playcalling tendencies to train an ML model 
-                    that suggests the most optimal offensive play in any NFL game situation.
-                </h4>
-            </div>
-
-            <br />
-
-            {/* ---- Team Input Section ---- */}
-            <div style={{ paddingLeft: "60px", paddingTop: "20px" }}>
-                <h2>Teams</h2>
-                
-                <div style={{ paddingLeft: '20px' }}>
-                    <span style={{ paddingLeft: '40px', paddingRight: '5px' }}>Offense:</span>
-                    <TeamDropdownMenu 
-                        onChange={(value) => setOffenseTeam(value)}
-                    /> 
-                    <span style={{ paddingLeft: '40px', paddingRight: '5px' }}>Defense:</span>
-                    <TeamDropdownMenu 
-                        onChange={(value) => setDefenseTeam(value)}
-                    />
-                </div>
-            </div>
-
-            {/* ---- Down and Distance Section ---- */}
-            <div style={{ paddingLeft: "60px", paddingTop: "20px" }}>
-                <h2>Down & Distance</h2>
-
-                <div style={{ paddingLeft: '20px' }}>
-                    {/* Down Selector */}
-                    <span style={{ paddingLeft: '40px', paddingRight: '5px' }}>Down:</span>
-                    <select
-                        name="down"
-                        id="down"
-                        style={{
-                            marginLeft: '5px',
-                            padding: '5px',
-                            fontSize: '16px',
-                        }}
-                        value={down}
-                        onChange={(e) => setDown(e.target.value)}
-                    >
-                        <option value="">-</option>
-                        <option value="1">1st</option>
-                        <option value="2">2nd</option>
-                        <option value="3">3rd</option>
-                        <option value="4">4th</option>
-                    </select>
-
-                    {/* Yards to Go */}
-                    <span style={{ paddingLeft: '40px', paddingRight: '5px' }}>Yards to go:</span>
-                    <input
-                        type="number"
-                        name="ydsToGo"
-                        id="ydsToGo"
-                        min="1"
-                        max="99"
-                        style={{
-                            marginLeft: '10px',
-                            padding: '5px',
-                            fontSize: '16px',
-                            width: '80px',
-                        }}
-                        value={ydsToGo}
-                        onChange={(e) => {
-                            const value = parseInt(e.target.value);
-                            if ((value >= 1 && value <= 99) || e.target.value === '') {
-                                setYdsToGo(e.target.value);
-                            }
-                        }}
-                    />
-
-                    {/* Territory */ }
-                    <span style={{ paddingLeft: '40px', paddingRight: '5px' }}>Territory:</span>
-                    <select
-                        name="ownOppMidfield"
-                        id="ownOppMidfield"
-                        style={{
-                            marginLeft: '5px',
-                            padding: '5px',
-                            fontSize: '16px',
-                        }}
-                        value={ownOppMidfield}
-                        onChange={(e) => setOwnOppMidfield(e.target.value)}
-                    >
-                        <option value="" style={{ color: "gray" }}>-</option>
-                        <option value="own">{offenseTeam !== '' ? `${offenseTeam} (OWN)` : 'OWN'}</option>
-                        <option value="opp">{defenseTeam !== '' ? `${defenseTeam} (OPP)` : 'OPP'}</option>
-                        <option value="midfield">MIDFIELD (50)</option>
-                    </select>
-
-                    {/* Yard line */}
-                    <span style={{ paddingLeft: '40px', paddingRight: '5px' }}>Yard Line (leave blank if territory is midfield):</span>
-                    <input
-                        type="number"
-                        name="ydLine50"
-                        id="ydLine50"
-                        min="1"
-                        max="49"
-                        style={{
-                            marginLeft: '10px',
-                            padding: '5px',
-                            fontSize: '16px',
-                            width: '100px',
-                        }}
-                        value={ydLine50}
-                        onChange={(e) => {
-                            const value = parseInt(e.target.value);
-                            if ((value >= 1 && value <= 49) || e.target.value === '') {
-                                setYdLine50(e.target.value);
-                            }
-                        }}
-                    />
-                </div>
-            </div>
-
-            {/* ---- Score Section ---- */}
-            <div style={{ paddingLeft: "60px", paddingTop: "20px" }}>
-                <h2>Score</h2>
-
-                <div style={{ paddingLeft: '20px' }}>
-                    {/* Offense Score */}
-                    <span style={{ paddingLeft: '40px', paddingRight: '5px' }}>{offenseTeam !== '' ? offenseTeam : 'Offense'} Points:</span>
-                    <input
-                        type="number"
-                        name="offensePoints"
-                        id="offensePoints"
-                        min="0"
-                        style={{
-                            marginLeft: '10px',
-                            padding: '5px',
-                            fontSize: '16px',
-                            width: '150px',
-                        }}
-                        value={offensePoints}
-                        onChange={(e) => {
-                            const value = parseInt(e.target.value);
-                            if ((value >= 0 && value <= 99) || e.target.value === '') {
-                                setOffensePoints(e.target.value);
-                            }
-                        }}
-                    />
-
-                    {/* Defense Score */}
-                    <span style={{ paddingLeft: '40px', paddingRight: '5px' }}>{defenseTeam !== '' ? defenseTeam : 'Defense'} Points:</span>
-                    <input
-                        type="number"
-                        name="defensePoints"
-                        id="defensePoints"
-                        min="0"
-                        style={{
-                            marginLeft: '10px',
-                            padding: '5px',
-                            fontSize: '16px',
-                            width: '150px',
-                        }}
-                        value={defensePoints}
-                        onChange={(e) => {
-                            const value = parseInt(e.target.value);
-                            if ((value >= 0 && value <= 99) || e.target.value === '') {
-                                setDefensePoints(e.target.value);
-                            }
-                        }}
-                    />
-                </div>
-            </div>
-
-            {/* ---- Time Section ---- */}
-            <div style={{ paddingLeft: '60px', paddingTop: '20px' }}>
-                <h2>Time</h2>
-
-                <div style={{ paddingLeft: '20px' }}>
-                    {/* Quarter Selector */}
-                    <span style={{ paddingLeft: '40px', paddingRight: '5px' }}>Quarter:</span>
-                    <select
-                        name="quarter"
-                        id="quarter"
-                        style={{
-                            marginLeft: '5px',
-                            padding: '5px',
-                            fontSize: '16px',
-                            width: '100px'
-                        }}
-                        value={quarter}
-                        onChange={(e) => {
-                            setQuarter(e.target.value);
-                        }}
-                    >
-                        <option value="">-</option>
-                        <option value="1">1st</option>
-                        <option value="2">2nd</option>
-                        <option value="3">3rd</option>
-                        <option value="4">4th</option>
-                        <option value="OT">OT</option>
-                    </select>
-
-                    {/* Minutes */}
-                    <span style={{ paddingLeft: '40px', paddingRight: '5px' }}>Minutes:</span>
-                    <input
-                        type="number"
-                        name="minutes"
-                        id="minutes"
-                        min="0"
-                        max="15"
-                        style={{
-                            marginLeft: '10px',
-                            padding: '5px',
-                            fontSize: '16px',
-                            width: '100px',
-                        }}
-                        value={minutes}
-                        onChange={(e) => {
-                            const value = parseInt(e.target.value);
-                            if ((value >= 0 && value <= 15) || e.target.value === '') {
-                                setMinutes(e.target.value);
-                                // If minutes is set to 15, automatically set seconds to 0
-                                if (value === 15) {
-                                    setSeconds(0);
+        <div className="situation-container">
+            {/* Cards Container */}
+            <div className="cards-container">
+                {/* OFFENSE Card */}
+                <div className="card">
+                    <h2 className="card-title">OFFENSE</h2>
+                    
+                    {/* Hidden team selector */}
+                    <div style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}>
+                        <TeamDropdownMenu 
+                            onChange={(value) => setOffenseTeam(value)}
+                        />
+                    </div>
+                    
+                    {/* Team Logo Display */}
+                    <div className="team-logo-container" onClick={() => openTeamSelector('offense')} style={{ cursor: 'pointer' }}>
+                        {offenseTeam ? (
+                            <img 
+                                src={getTeamLogo(offenseTeam)}
+                                alt={offenseTeam}
+                                className="team-logo"
+                            />
+                        ) : (
+                            <div style={{ fontSize: '24px', color: 'rgba(255,255,255,0.5)' }}>Select Team</div>
+                        )}
+                    </div>
+                    
+                    {/* Points Display */}
+                    <div className="points-display">
+                        <input
+                            type="number"
+                            className="situation-input"
+                            min="0"
+                            max="99"
+                            value={offensePoints || ''}
+                            onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                if ((value >= 0 && value <= 99) || e.target.value === '') {
+                                    setOffensePoints(e.target.value);
                                 }
-                            }
-                        }}
-                    />
-
-                    {/* Seconds */}
-                    <span style={{ paddingLeft: '40px', paddingRight: '5px' }}>Seconds:</span>
-                    <input
-                        type="number"
-                        name="seconds"
-                        id="seconds"
-                        min="0"
-                        max="59"
-                        style={{
-                            marginLeft: '10px',
-                            padding: '5px',
-                            fontSize: '16px',
-                            width: '100px',
-                        }}
-                        value={seconds}
-                        onChange={(e) => {
-                            const value = parseInt(e.target.value);
-                            // If minutes is 15, only allow seconds to be 0
-                            if (parseInt(minutes) === 15) {
-                                setSeconds(0);
-                                return;
-                            }
-                            // Normal validation for other cases
-                            if ((value >= 0 && value <= 59) || e.target.value === '') {
-                                setSeconds(e.target.value);
-                            }
-                        }}
-                    />
-                </div>
-            </div>
-
-            {/* ---- Timeouts Section ---- */}
-            <div style={{ paddingLeft: '60px', paddingTop: '20px' }}>
-                <h2>Timeouts</h2>
-
-                <div style={{ paddingLeft: '20px' }}>
-                    {/* Offense Timeouts */}
-                    <span style={{ paddingLeft: '40px', paddingRight: '5px' }}>{offenseTeam !== '' ? offenseTeam : 'Offense'} Timeouts:</span>
+                            }}
+                            placeholder="10"
+                            style={{ fontSize: '72px', width: '120px', color: '#ff69ff' }}
+                        />
+                    </div>
+                    
+                    {/* Timeout Indicators */}
+                    <div className="timeout-indicators">
+                        <div className={`timeout-dot ${parseInt(offenseTimeouts) >= 1 ? '' : 'inactive'}`}></div>
+                        <div className={`timeout-dot ${parseInt(offenseTimeouts) >= 2 ? '' : 'inactive'}`}></div>
+                        <div className={`timeout-dot ${parseInt(offenseTimeouts) >= 3 ? '' : 'inactive'}`}></div>
+                    </div>
+                    
+                    {/* Hidden timeout selector */}
                     <select
-                        name="offenseTimeouts"
-                        id="offenseTimeouts"
-                        style={{
-                            marginLeft: '5px',
-                            padding: '5px',
-                            fontSize: '16px',
-                            width: '100px'
-                        }}
                         value={offenseTimeouts}
                         onChange={(e) => setOffenseTimeouts(e.target.value)}
+                        style={{ position: 'absolute', opacity: 0, pointerEvents: 'auto', marginTop: '-40px', marginLeft: '50px', width: '200px', height: '40px' }}
+                        title="Select offense timeouts"
                     >
                         <option value="">-</option>
                         <option value="0">0</option>
@@ -373,20 +253,163 @@ const Situation = () => {
                         <option value="2">2</option>
                         <option value="3">3</option>
                     </select>
+                </div>
 
-                    {/* Defense Timeouts */}
-                    <span style={{ paddingLeft: '40px', paddingRight: '5px' }}>{defenseTeam !== '' ? defenseTeam : 'Defense'} Timeouts:</span>
+                {/* TEAMS Card */}
+                <div className="teams-card">
+                    <h2 className="card-title">GAME STATE</h2>
+                    
+                    {/* Down & Yards to Go */}
+                    <div className="situation-row">
+                        <span className="situation-label">DOWN</span>
+                        <select
+                            className="situation-input"
+                            value={down}
+                            onChange={(e) => setDown(e.target.value)}
+                            style={{ width: '80px' }}
+                        >
+                            <option value="">-</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                        </select>
+                        
+                        <span className="situation-label" style={{ fontSize: '48px', margin: '0 20px' }}>&</span>
+                        
+                        <span className="situation-label">YDS TO GO</span>
+                        <input
+                            type="number"
+                            className="situation-input"
+                            min="1"
+                            max="99"
+                            value={ydsToGo || ''}
+                            onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                if ((value >= 1 && value <= 99) || e.target.value === '') {
+                                    setYdsToGo(e.target.value);
+                                }
+                            }}
+                            placeholder="10"
+                        />
+                    </div>
+                    
+                    {/* Quarter & Time */}
+                    <div className="situation-row">
+                        <span className="situation-label">QTR</span>
+                        <select
+                            className="situation-input"
+                            value={quarter}
+                            onChange={(e) => setQuarter(e.target.value)}
+                            style={{ width: '80px' }}
+                        >
+                            <option value="">-</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="OT">OT</option>
+                        </select>
+                        
+                        <div className="time-display" style={{ marginLeft: 'auto' }}>
+                            <input
+                                type="number"
+                                className="situation-input"
+                                min="0"
+                                max="15"
+                                value={minutes || ''}
+                                onChange={(e) => {
+                                    const value = parseInt(e.target.value);
+                                    if ((value >= 0 && value <= 15) || e.target.value === '') {
+                                        setMinutes(e.target.value);
+                                        if (value === 15) {
+                                            setSeconds(0);
+                                        }
+                                    }
+                                }}
+                                placeholder="12"
+                                style={{ width: '70px' }}
+                            />
+                            <span style={{ fontSize: '48px' }}>:</span>
+                            <input
+                                type="number"
+                                className="situation-input"
+                                min="0"
+                                max="59"
+                                value={seconds !== undefined && seconds !== '' ? String(seconds).padStart(2, '0') : ''}
+                                onChange={(e) => {
+                                    const value = parseInt(e.target.value);
+                                    if (parseInt(minutes) === 15) {
+                                        setSeconds(0);
+                                        return;
+                                    }
+                                    if ((value >= 0 && value <= 59) || e.target.value === '') {
+                                        setSeconds(e.target.value);
+                                    }
+                                }}
+                                placeholder="15"
+                                style={{ width: '70px' }}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* DEFENSE Card */}
+                <div className="card">
+                    <h2 className="card-title">DEFENSE</h2>
+                    
+                    {/* Hidden team selector */}
+                    <div style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}>
+                        <TeamDropdownMenu 
+                            onChange={(value) => setDefenseTeam(value)}
+                        />
+                    </div>
+                    
+                    {/* Team Logo Display */}
+                    <div className="team-logo-container" onClick={() => openTeamSelector('defense')} style={{ cursor: 'pointer' }}>
+                        {defenseTeam ? (
+                            <img 
+                                src={getTeamLogo(defenseTeam)}
+                                alt={defenseTeam}
+                                className="team-logo"
+                            />
+                        ) : (
+                            <div style={{ fontSize: '24px', color: 'rgba(255,255,255,0.5)' }}>Select Team</div>
+                        )}
+                    </div>
+                    
+                    {/* Points Display */}
+                    <div className="points-display">
+                        <input
+                            type="number"
+                            className="situation-input"
+                            min="0"
+                            max="99"
+                            value={defensePoints || ''}
+                            onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                if ((value >= 0 && value <= 99) || e.target.value === '') {
+                                    setDefensePoints(e.target.value);
+                                }
+                            }}
+                            placeholder="10"
+                            style={{ fontSize: '72px', width: '120px', color: '#ff69ff' }}
+                        />
+                    </div>
+                    
+                    {/* Timeout Indicators */}
+                    <div className="timeout-indicators">
+                        <div className={`timeout-dot ${parseInt(defenseTimeouts) >= 1 ? '' : 'inactive'}`}></div>
+                        <div className={`timeout-dot ${parseInt(defenseTimeouts) >= 2 ? '' : 'inactive'}`}></div>
+                        <div className={`timeout-dot ${parseInt(defenseTimeouts) >= 3 ? '' : 'inactive'}`}></div>
+                    </div>
+                    
+                    {/* Hidden timeout selector */}
                     <select
-                        name="defenseTimeouts"
-                        id="defenseTimeouts"
-                        style={{
-                            marginLeft: '5px',
-                            padding: '5px',
-                            fontSize: '16px',
-                            width: '100px'
-                        }}
                         value={defenseTimeouts}
                         onChange={(e) => setDefenseTimeouts(e.target.value)}
+                        style={{ position: 'absolute', opacity: 0, pointerEvents: 'auto', marginTop: '-40px', marginLeft: '50px', width: '200px', height: '40px' }}
+                        title="Select defense timeouts"
                     >
                         <option value="">-</option>
                         <option value="0">0</option>
@@ -397,33 +420,92 @@ const Situation = () => {
                 </div>
             </div>
 
-            {/* ---- Submit Button ---- */}
-            <div style={{ paddingLeft: "60px", paddingTop: "60px" }}>
-                <button
-                    type="submit"
-                    style={{
-                        padding: "10px 100px",
-                        fontSize: "16px",
-                        backgroundColor: "#12dab9ff",
-                        color: "black",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer"
-                    }}
-                    onClick={submitSituation}
-                >
-                    Submit
-                </button>
+            {/* Field Container */}
+            <div className="field-container">
+                <div className="field">
+                    <div className="field-lines">
+                        <span>0</span>
+                        <span>10</span>
+                        <span>20</span>
+                        <span>30</span>
+                        <span>40</span>
+                        <span>50</span>
+                        <span>40</span>
+                        <span>30</span>
+                        <span>20</span>
+                        <span>10</span>
+                        <span>0</span>
+                    </div>
+                    <div className="field-marker">
+                        <div className="ball-marker"></div>
+                    </div>
+                    <div className="scroll-text">scroll</div>
+                </div>
+                <div className="yard-line-display">
+                    {/* Territory selector */}
+                    <select
+                        className="situation-input"
+                        value={ownOppMidfield}
+                        onChange={(e) => setOwnOppMidfield(e.target.value)}
+                        style={{ width: 'auto', minWidth: '100px', marginRight: '10px' }}
+                    >
+                        <option value="">-</option>
+                        <option value="own">OWN</option>
+                        <option value="opp">OPP</option>
+                        <option value="midfield">MID</option>
+                    </select>
+                    
+                    {/* Yard line input */}
+                    {ownOppMidfield !== 'midfield' && (
+                        <input
+                            type="number"
+                            className="situation-input"
+                            min="1"
+                            max="49"
+                            value={ydLine50 || ''}
+                            onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                if ((value >= 1 && value <= 49) || e.target.value === '') {
+                                    setYdLine50(e.target.value);
+                                }
+                            }}
+                            placeholder="20"
+                            style={{ width: '100px' }}
+                        />
+                    )}
+                    
+                    {ownOppMidfield === 'midfield' && (
+                        <span>50</span>
+                    )}
+                </div>
             </div>
 
-            <br />
-            <br />
-            <br />
-            <br />
-            <br />
-            <br />
-            <br />
+            {/* Submit Button */}
+            <button className="submit-button" onClick={submitSituation}>
+                Submit Situation
+            </button>
 
+            {/* Team Selector Modal */}
+            {showTeamSelector && (
+                <div className="team-selector-overlay" onClick={() => setShowTeamSelector(false)}>
+                    <div className="team-selector-modal" onClick={(e) => e.stopPropagation()}>
+                        <h2 className="team-selector-title">SELECT TEAM</h2>
+                        <div className="team-grid">
+                            {teams.map((team) => (
+                                <div 
+                                    key={team.abbr}
+                                    className="team-option"
+                                    onClick={() => selectTeam(team.abbr)}
+                                >
+                                    <img src={team.logo} alt={team.abbr} className="team-option-logo" />
+                                    <span className="team-option-abbr">{team.abbr}</span>
+                                </div>
+                            ))}
+                        </div>
+                        <button className="close-modal-btn" onClick={() => setShowTeamSelector(false)}>✕</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
