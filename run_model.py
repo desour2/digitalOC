@@ -17,7 +17,7 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
     """
     Trains tendency models ('run_gap', 'run_location', 'offense_formation',
     'offense_personnel') using all available situational, personnel, and
-    formation features
+    formation features.
     """
 
     # 1. data loading
@@ -37,14 +37,14 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
         print("No 'run' plays found. Exiting.")
         return {}
 
-    # 1b. participation / personnel merge 
+    # 1b. OPTIONAL participation / personnel merge
     try:
         part_df: pd.DataFrame = pd.read_csv(
             "Data/pbp_participation_2024.csv",
             low_memory=False,
         )
     except FileNotFoundError:
-        print("participation file not found, skipping personnel/formation features.")
+        print("Warning: participation file not found, skipping personnel/formation features.")
         part_df = None
 
     if part_df is not None:
@@ -54,13 +54,13 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
         elif "game_id" in df_filtered.columns and "game_id" in part_df.columns:
             game_key_col = "game_id"
         else:
-            print("no shared game id between pbp and participation; skipping personnel/formation.")
+            print("Warning: no shared game id between PBP and participation; skipping personnel/formation.")
             part_df = None
 
     if part_df is not None:
         keep_cols: List[str] = [game_key_col, "play_id"]
 
-        # only what we care about
+        # only grab what we actually care about right now
         extra_part_cols: List[str] = [
             "offense_personnel",
             "defense_personnel",
@@ -127,6 +127,9 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
             & (df_filtered["score_differential"].abs() <= 8)
         ).astype(int)
 
+    # 3. define 'y' (target) for Stage 1: 'run_success'
+    # 4. define 'X' (features) for all models
+
     # original base feature set from your group
     base_feature_columns: List[str] = [
         "down",
@@ -135,15 +138,16 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
         "goal_to_go",
         "qtr",
         "quarter_seconds_remaining",
-        "game_seconds_remaining",
         "half_seconds_remaining",
+        "game_seconds_remaining",
+        "half_seconds_remaining", # Added back in
         "score_differential",
         "posteam_timeouts_remaining",
         "defteam_timeouts_remaining",
+        "posteam",
+        "defteam", 
         "shotgun",
         "no_huddle",
-        "posteam",
-        "defteam",
         "roof",
         "surface",
         "temp",
@@ -155,7 +159,6 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
         "is_close_game_late",
     ]
 
-    # personnel numeric features
     personnel_numeric: List[str] = [
         "off_rb",
         "off_te",
@@ -166,7 +169,6 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
         "defenders_in_box",
     ]
 
-    # personnel/formation categoricals
     personnel_categorical: List[str] = [
         "offense_formation",
         "off_group_bucket",
@@ -181,6 +183,9 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
     for num_col in personnel_numeric:
         if num_col in df_filtered.columns:
             df_filtered[num_col] = df_filtered[num_col].fillna(0)
+
+    # #TODO: Temporarily removing the the personnel features and keeping only the base features
+    # feature_columns: List[str] = (base_feature_columns)
 
     existing_features: List[str] = [
         col for col in feature_columns if col in df_filtered.columns
@@ -203,11 +208,6 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
         "def_group_bucket",
     ]
 
-    # store a list of all numeric columns before get_dummies
-    numeric_cols: List[str] = list(
-        set(X.columns) - set(categorical_cols)
-    )
-
     existing_categorical: List[str] = [
         col for col in categorical_cols if col in X.columns
     ]
@@ -220,24 +220,19 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
     # the fix for the ValueError: Input X contains NaN
     X_processed = X_processed.fillna(0)
     
-    # get final list of numeric cols to scale
-    # will include the original numeric_cols + any new 0/1 flags from get_dummies
-    # for Logistic Regression, should scale all features
-    final_feature_cols = X_processed.columns.tolist()
-
-
     # 5. Stage 1 model: predict run_success
     print("--- Model Pipeline Simplification ---")
+    print("Training tendency models directly on all features.")
     print(f"Total features being used: {len(X_processed.columns)}")
 
     # 6. Stage 2 models: predict tendencies
     trained_models: Dict[str, Dict[str, Any]] = {}
-    # add the new targets to the list
+    # NEW: Add the new targets to the list
     target_columns: List[str] = [
         "run_gap",
         "run_location",
         "offense_formation",
-        "offense_personnel",
+        "personnel_off", # CHANGED: Use the renamed column name
     ]
 
     for target in target_columns:
@@ -249,14 +244,14 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
 
         y_tend: pd.Series = df_filtered[target]
 
-        # clean NaNs from this specific target
+        # Clean NaNs from this *specific* target
         valid_indices = y_tend.dropna().index
         y_clean = y_tend.loc[valid_indices]
 
-        # remove features that are derived from the target itself
+        # We must remove features that are derived from the target itself
         X_to_use = X_processed.loc[valid_indices].copy()
         
-        # define leaky columns
+        # Define leaky columns
         formation_leaks = [col for col in X_to_use.columns if col.startswith('offense_formation_')]
         
         personnel_leaks = [
@@ -266,20 +261,30 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
         if target == 'offense_formation':
             X_clean = X_to_use.drop(columns=formation_leaks, errors='ignore')
             print(f"  (Dropped {len(formation_leaks)} formation-related features to prevent leakage)")
-        elif target == 'offense_personnel':
+        elif target == 'personnel_off': # CHANGED: Check for the new name
             X_clean = X_to_use.drop(columns=personnel_leaks, errors='ignore')
             print(f"  (Dropped {len(personnel_leaks)} personnel-related features to prevent leakage)")
         else:
-            # for run_gap and run_location, assume no leakage from these groups
+            # For run_gap and run_location, we assume no leakage from these groups
             X_clean = X_to_use
+
+        # Filter out classes that appear fewer than 2 times to prevent stratify error
+        class_counts = y_clean.value_counts()
+        valid_classes = class_counts[class_counts > 1].index
+        
+        # Only keep rows where the target is in the valid_classes list
+        valid_mask = y_clean.isin(valid_classes)
+        X_clean = X_clean.loc[valid_mask]
+        y_clean = y_clean.loc[valid_mask]
+        # -------------------------------------
 
         if X_clean.empty or y_clean.nunique() < 2:
             print(
-                f"not enough data or classes for '{target}' after cleaning. Skipping..."
+                f"Warning: Not enough data or classes for '{target}' after cleaning. Skipping..."
             )
             continue
         
-        # create a single train/test split for this target
+        # Create a single train/test split for this target
         X_train, X_test, y_train, y_test = train_test_split(
             X_clean,
             y_clean,
@@ -290,23 +295,20 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
         
         # Logistic Regression performs better when all features are scaled
         scaler = StandardScaler()
-        # use the X_clean columns
+        # Use the (potentially modified) X_clean columns
         X_train_scaled = scaler.fit_transform(X_train[X_clean.columns])
         X_test_scaled = scaler.transform(X_test[X_clean.columns])
 
-        # model: RandomForestClassifier = RandomForestClassifier(
-        #     n_estimators=100,
-        #     random_state=42,
-        # )
         model: LogisticRegression = LogisticRegression(
             random_state=42,
-            max_iter=1000, # increase iterations to ensure convergence
+            max_iter=1000, # Increase iterations to ensure convergence
+            # 'multi_class' is deprecated; removing it uses the new default
         )
         
-        model.fit(X_train_scaled, y_train) # scaled data
+        model.fit(X_train_scaled, y_train) # Use scaled data
 
         if not X_test.empty:
-            y_pred: np.ndarray = model.predict(X_test_scaled) # scaled data
+            y_pred: np.ndarray = model.predict(X_test_scaled) # Use scaled data
             tend_accuracy: float = accuracy_score(y_test, y_pred)
 
             print(f"Model accuracy for '{target}': {tend_accuracy:.3f}")
@@ -326,10 +328,112 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
         trained_models[target] = {
             "model": model,
             "columns": X_train.columns.tolist(),
-            "scaler": scaler
+            "scaler": scaler 
         }
 
     return trained_models
+
+
+def predict_run_metrics(situation, trained_models):
+    ''' 
+        Function that predicts the most optimal run gap and location 
+        with success probability for this specific run play 
+        based on the trained run models. 
+    '''
+
+    # Convert input to DataFrame with correct column names
+    situation_df = pd.DataFrame([situation], columns=['down', 'ydstogo', 'yardline_100', 'goal_to_go', 'quarter_seconds_remaining',
+                                                      'half_seconds_remaining', 'game_seconds_remaining', 'score_differential', 
+                                                      'posteam_timeouts_remaining', 'defteam_timeouts_remaining', 'posteam', 'defteam'])
+    
+    # Add the engineered features (same as in training)
+    situation_df["is_redzone"] = (situation_df["yardline_100"] <= 20).astype(int)
+    situation_df["is_goal_line"] = (
+        (situation_df["goal_to_go"] == 1) & (situation_df["yardline_100"] <= 10)
+    ).astype(int)
+    situation_df["is_short_yardage"] = (
+        (situation_df["ydstogo"] <= 2) & (situation_df["down"] >= 3)
+    ).astype(int)
+    
+    # Infer quarter from time remaining (simple heuristic)
+    if situation[6] > 2700:  # game_seconds_remaining
+        qtr = 1
+    elif situation[6] > 1800:
+        qtr = 2
+    elif situation[6] > 900:
+        qtr = 3
+    else:
+        qtr = 4
+    
+    situation_df["qtr"] = qtr
+    situation_df["is_two_minute_drill"] = (
+        (situation_df["quarter_seconds_remaining"] <= 120)
+        & (situation_df["qtr"].isin([2, 4]))
+    ).astype(int)
+    situation_df["is_close_game_late"] = (
+        (situation_df["qtr"] == 4)
+        & (situation_df["score_differential"].abs() <= 8)
+    ).astype(int)
+    
+    # Add default values for missing columns that were used in training
+    situation_df["shotgun"] = 0  # default value
+    situation_df["no_huddle"] = 0  # default value
+    situation_df["roof"] = "outdoors"  # default value
+    situation_df["surface"] = "grass"  # default value
+    situation_df["temp"] = 70  # default value
+    situation_df["wind"] = 0  # default value
+    
+    # Apply one-hot encoding to categorical columns (same as training)
+    categorical_cols = ["posteam", "defteam", "roof", "surface", "qtr"]
+    situation_encoded = pd.get_dummies(
+        situation_df,
+        columns=categorical_cols,
+        drop_first=True,
+    )
+    
+    # Get the situation model to predict success probability first
+    sit_model_info = trained_models.get("situation")
+    if sit_model_info:
+        sit_model = sit_model_info["model"]
+        sit_columns = sit_model_info["columns"]
+        
+        # Align columns with training data
+        for col in sit_columns:
+            if col not in situation_encoded.columns:
+                situation_encoded[col] = 0
+        
+        situation_encoded = situation_encoded[sit_columns]
+        
+        # Predict success probability
+        success_prob = sit_model.predict_proba(situation_encoded)[0, 1]
+        print(f"Predicted run success probability: {success_prob:.3f}")
+        
+        # Add this as a feature for tendency models
+        situation_encoded["predicted_run_success_prob"] = success_prob
+    
+    # Predict the most optimal metric (gap, location) for the run play 
+    run_metrics = {}
+    for metric in ["run_gap", "run_location", "offense_formation"]:
+        if metric in trained_models:
+            model_info = trained_models[metric]
+            model = model_info["model"]
+            model_columns = model_info["columns"]
+            
+            # Align columns with training data
+            for col in model_columns:
+                if col not in situation_encoded.columns:
+                    situation_encoded[col] = 0
+            
+            # Reorder columns to match training
+            situation_for_prediction = situation_encoded[model_columns]
+            
+            # Predict
+            prediction = model.predict(situation_for_prediction)[0]
+            run_metrics[metric] = prediction
+            print(f"Predicted {metric}: {prediction}")
+
+    return run_metrics
+
 
 
 if __name__ == "__main__":

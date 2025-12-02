@@ -1,7 +1,7 @@
 import React, {useRef, useEffect, useState} from 'react';
-import TeamDropdownMenu from '../components/team_dropdown';
+import TeamDropdownMenu from '../../components/team_dropdown';
 
-const Homepage = () => {
+const Situation = () => {
     
     // Team attributes
     const [offenseTeam, setOffenseTeam] = useState("");
@@ -428,4 +428,4 @@ const Homepage = () => {
     );
 }
 
-export default Homepage;
+export default Situation;

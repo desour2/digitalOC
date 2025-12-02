@@ -2,6 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 
 from pbp_situation_model import train_pbp_model, predict_play
+from run_model import train_run_models, predict_run_metrics
 
 
 app = Flask(__name__)
@@ -25,17 +26,22 @@ def suggest_play(situation):
                  int(situation[5]), int(situation[6]), int(situation[7]), int(situation[8]), int(situation[9]),
                  situation[10], situation[11]]
 
-
-    ''' Predict whether the play type for the given situation should be a run or pass '''
-
-    # Train the PBP Situation Model
-    trained_model, feature_columns = train_pbp_model()
-    print(feature_columns)
-    print()
-
     # Predict whether the play type for the given situation should be a run or pass
-    prediction, confidence = predict_play(situation, trained_model, feature_columns)
+    prediction, confidence = predict_play(situation, trained_model=train_pbp_model()[0], feature_columns=train_pbp_model()[1])
 
+
+
+    # Depending on the prediction, feed it into the run or pass model
+    if prediction == 'run':
+        run_prediction = predict_run_metrics(situation, trained_models=train_run_models())
+        print(f"Run Prediction: {run_prediction}")
+
+
+
+    if prediction == 'pass':
+        # For pass plays, we would ideally call a function to predict pass metrics
+        # Since that function is not defined, we will just print a placeholder
+        print("Pass Prediction: [Placeholder for pass metrics prediction]")
 
 
 
