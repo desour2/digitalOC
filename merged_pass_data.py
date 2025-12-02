@@ -81,13 +81,17 @@ def load_pbp_year(year: str) -> pd.DataFrame:
 
     is_pass = (pbp["pass_attempt"] == 1) | (pbp["qb_dropback"] == 1) | (pbp["play_type"] == "pass")
 
-    # exclude penalties/no-plays if present
+    # exclude penalties/no-plays/interceptions if present
     if "penalty" in pbp.columns:
         pbp["penalty"] = pd.to_numeric(pbp["penalty"], errors="coerce").fillna(0).astype(int)
         is_pass &= pbp["penalty"] == 0
     if "no_play" in pbp.columns:
         pbp["no_play"] = pd.to_numeric(pbp["no_play"], errors="coerce").fillna(0).astype(int)
         is_pass &= pbp["no_play"] == 0
+    if "interception" in pbp.columns:
+        pbp["interception"] = pd.to_numeric(pbp["interception"], errors="coerce").fillna(0).astype(int)
+        is_pass &= pbp["interception"] == 0
+
 
     # require basic context (down not NA)
     pbp = pbp[is_pass & pbp["down"].notna()].copy()
@@ -204,6 +208,11 @@ def build_pass_frame(year: str) -> pd.DataFrame:
         merged["receiver_position"] = merged["receiver_position"].fillna(merged["receiver_position_by_name"])
         merged = merged.drop(columns=["short_name", "receiver_position_by_name"], errors="ignore")
 
+        # Drop plays where receiver is a defensive position (interceptions that slipped through)
+        OFFENSIVE_RECEIVER_POS = ["WR", "TE", "RB", "FB"]
+        merged = merged[merged["receiver_position"].isin(OFFENSIVE_RECEIVER_POS)]
+
+
     # simple match-rate report
     if "offense_personnel" in merged.columns:
         match_rate = merged["offense_personnel"].notna().mean()
@@ -243,7 +252,7 @@ def build_and_save(years: List[str], out_name: str = "merged_pass_model_data.csv
 
 if __name__ == "__main__":
     # change the list if you only want 2024, etc.
-    YEARS = ["2023"]  # or ["2020","2021","2022","2023","2024"]
-    build_and_save(YEARS, out_name="merged_pass_model_data_2023.csv")
+    YEARS = ["2020"]  # or ["2020","2021","2022","2023","2024"]
+    build_and_save(YEARS, out_name="merged_pass_model_data_2020.csv")
 
     # returns giant dataframe in csv stored in data folder.
