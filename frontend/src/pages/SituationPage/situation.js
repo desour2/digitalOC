@@ -104,10 +104,80 @@ const Situation = () => {
         { abbr: 'WAS', logo: WASLogo },
     ];
     
+    // Team colors data
+    const teamColors = {
+        'ARI': { primary: '#97233f', secondary: '#000000' },
+        'ATL': { primary: '#a71930', secondary: '#000000' },
+        'BAL': { primary: '#241773', secondary: '#9e7c0c' },
+        'BUF': { primary: '#00338d', secondary: '#c60c30' },
+        'CAR': { primary: '#0085ca', secondary: '#000000' },
+        'CHI': { primary: '#0b162a', secondary: '#c83803' },
+        'CIN': { primary: '#fb4f14', secondary: '#000000' },
+        'CLE': { primary: '#ff3c00', secondary: '#311d00' },
+        'DAL': { primary: '#002244', secondary: '#b0b7bc' },
+        'DEN': { primary: '#002244', secondary: '#fb4f14' },
+        'DET': { primary: '#0076b6', secondary: '#b0b7bc' },
+        'GB': { primary: '#203731', secondary: '#ffb612' },
+        'HOU': { primary: '#03202f', secondary: '#a71930' },
+        'IND': { primary: '#002c5f', secondary: '#fffff8' },
+        'JAX': { primary: '#000000', secondary: '#006778' },
+        'KC': { primary: '#e31837', secondary: '#ffb612' },
+        'LAC': { primary: '#0080c6', secondary: '#ffc20e' },
+        'LAR': { primary: '#002244', secondary: '#fffff8' },
+        'LV': { primary: '#000000', secondary: '#a5acaf' },
+        'MIA': { primary: '#008e97', secondary: '#fc4c02' },
+        'MIN': { primary: '#4f2683', secondary: '#ffc62f' },
+        'NE': { primary: '#002244', secondary: '#c60c30' },
+        'NO': { primary: '#d3bc8d', secondary: '#000000' },
+        'NYG': { primary: '#0b2265', secondary: '#a71930' },
+        'NYJ': { primary: '#003f2d', secondary: '#fffff8' },
+        'PHI': { primary: '#004c54', secondary: '#a5acaf' },
+        'PIT': { primary: '#000000', secondary: '#ffb612' },
+        'SEA': { primary: '#002244', secondary: '#69be28' },
+        'SF': { primary: '#d50a0a', secondary: '#b3995d' },
+        'TB': { primary: '#d50a0a', secondary: '#34302b' },
+        'TEN': { primary: '#002244', secondary: '#4b92db' },
+        'WAS': { primary: '#5a1414', secondary: '#ffbc12' }
+    };
+    
     // Get team logo by abbreviation
     const getTeamLogo = (abbr) => {
         const team = teams.find(t => t.abbr === abbr);
         return team ? team.logo : null;
+    };
+    
+    // Get team gradient background
+    const getTeamGradient = (abbr) => {
+        const colors = teamColors[abbr];
+        if (colors) {
+            // Convert hex to rgba with 0.85 opacity and favor primary color
+            const hexToRgba = (hex, opacity) => {
+                const r = parseInt(hex.slice(1, 3), 16);
+                const g = parseInt(hex.slice(3, 5), 16);
+                const b = parseInt(hex.slice(5, 7), 16);
+                return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+            };
+            return `linear-gradient(135deg, ${hexToRgba(colors.primary, 0.5)} 48%, ${hexToRgba(colors.secondary, 0.44)} 100%)`;
+        }
+        return 'rgba(20, 30, 60, 0.8)'; // Default background
+    };
+    
+    // Get 50/50 split gradient for teams card
+    const getTeamsCardGradient = () => {
+        if (offenseTeam && defenseTeam) {
+            const offenseColor = teamColors[offenseTeam]?.primary;
+            const defenseColor = teamColors[defenseTeam]?.primary;
+            if (offenseColor && defenseColor) {
+                const hexToRgba = (hex, opacity) => {
+                    const r = parseInt(hex.slice(1, 3), 16);
+                    const g = parseInt(hex.slice(3, 5), 16);
+                    const b = parseInt(hex.slice(5, 7), 16);
+                    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+                };
+                return `linear-gradient(135deg, ${hexToRgba(offenseColor, 0.5)} 32%, ${hexToRgba(defenseColor, 0.5)} 100%)`;
+            }
+        }
+        return 'rgba(40, 30, 70, 0.9)'; // Default background
     };
     
     // Open team selector
@@ -225,7 +295,7 @@ const Situation = () => {
             {/* Cards Container */}
             <div className="cards-container">
                 {/* OFFENSE Card */}
-                <div className="card">
+                <div className="card" style={{ background: offenseTeam ? getTeamGradient(offenseTeam) : 'rgba(20, 30, 60, 0.8)' }}>
                     <h2 className="card-title">OFFENSE</h2>
                     
                     {/* Hidden team selector */}
@@ -263,7 +333,7 @@ const Situation = () => {
                                 }
                             }}
                             placeholder="10"
-                            style={{ fontSize: '72px', width: '120px', color: '#ff69ff' }}
+                            style={{ fontSize: '72px', width: '120px', color: '#fbf7fbff' }}
                         />
                     </div>
                     
@@ -288,7 +358,7 @@ const Situation = () => {
                 </div>
 
                 {/* TEAMS Card */}
-                <div className="teams-card">
+                <div className="teams-card" style={{ background: getTeamsCardGradient() }}>
                     <h2 className="card-title">GAME STATE</h2>
                     
                     {/* Down & Yards to Go */}
@@ -387,7 +457,7 @@ const Situation = () => {
                 </div>
 
                 {/* DEFENSE Card */}
-                <div className="card">
+                <div className="card" style={{ background: defenseTeam ? getTeamGradient(defenseTeam) : 'rgba(20, 30, 60, 0.8)' }}>
                     <h2 className="card-title">DEFENSE</h2>
                     
                     {/* Hidden team selector */}
