@@ -177,6 +177,11 @@ def build_pass_frame(year: str) -> pd.DataFrame:
     pos_cov = merged["receiver_position"].notna().mean()
     print(f"[{year}] rows: {len(merged):,}  participation match: {match_rate:.1%}  receiver_position coverage: {pos_cov:.1%}")
 
+    missing_with_name = merged["receiver"].notna() & (merged["receiver"].str.strip() != "") & merged["receiver_position"].isna()
+    print(f"Dropping {missing_with_name.sum():,} rows because NGS had no receiver_position for those names.")
+    merged = merged[~missing_with_name].copy()
+    print(f"[{year}] final rows after drop: {len(merged):,}")
+
     return merged
 
 def build_and_save(years: List[str], out_name: str = "merged_pass_model_data.csv") -> pd.DataFrame:
@@ -193,6 +198,6 @@ def build_and_save(years: List[str], out_name: str = "merged_pass_model_data.csv
 if __name__ == "__main__":
     # change the list if you only want 2024, etc.
     YEARS = ["2024"]  # or ["2020","2021","2022","2023","2024"]
-    build_and_save(YEARS, out_name="merged_pass_model_data_test.csv")
+    build_and_save(YEARS, out_name="merged_pass_model_data_2024.csv")
 
     # returns giant dataframe in csv stored in data folder.
