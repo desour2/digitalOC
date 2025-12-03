@@ -462,8 +462,10 @@ def visualize_play(play_data):
     labels = unique_labels.keys()
     
     ax.legend(handles=handles, labels=labels, loc='lower left')
-    
-    plt.show()
+
+    # Save plot instead of showing it with plt.show() (for Flask compatibility)
+    plt.savefig('play_visualization.png', dpi=150, bbox_inches='tight')
+    plt.close()  # Close the figure to free memory
     
     
 if __name__ == "__main__":

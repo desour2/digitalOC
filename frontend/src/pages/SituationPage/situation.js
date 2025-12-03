@@ -65,8 +65,8 @@ const Situation = () => {
     const [seconds, setSeconds] = useState(); 
 
     // Timeout attributes
-    const [offenseTimeouts, setOffenseTimeouts] = useState(""); 
-    const [defenseTimeouts, setDefenseTimeouts] = useState("");
+    const [offenseTimeouts, setOffenseTimeouts] = useState("0"); 
+    const [defenseTimeouts, setDefenseTimeouts] = useState("0");
     
     // Team data with logos
     const teams = [
@@ -131,7 +131,7 @@ const Situation = () => {
         'NO': { primary: '#d3bc8d', secondary: '#000000' },
         'NYG': { primary: '#0b2265', secondary: '#a71930' },
         'NYJ': { primary: '#003f2d', secondary: '#fffff8' },
-        'PHI': { primary: '#004c54', secondary: '#a5acaf' },
+        'PHI': { primary: '#18675bff', secondary: '#a5acaf' },
         'PIT': { primary: '#000000', secondary: '#ffb612' },
         'SEA': { primary: '#002244', secondary: '#69be28' },
         'SF': { primary: '#d50a0a', secondary: '#b3995d' },
@@ -237,7 +237,7 @@ const Situation = () => {
 
     async function submitSituation() {
         // Ensure no required fields are left blank
-        if (!offenseTeam || !defenseTeam || !down || !ydsToGo || !ownOppMidfield || (ownOppMidfield !== 'midfield' && !ydLine50) || !offensePoints || !defensePoints || !quarter || !minutes || !seconds || !offenseTimeouts || !defenseTimeouts) {
+        if (!offenseTeam || !defenseTeam || !down || !ydsToGo || !ownOppMidfield || (ownOppMidfield !== 'midfield' && !ydLine50) || offensePoints === '' || offensePoints === undefined || defensePoints === '' || defensePoints === undefined || !quarter || minutes === '' || minutes === undefined || seconds === '' || seconds === undefined) {
             alert("Please fill out all required fields before submitting the situation.");
             return;
         }
@@ -267,7 +267,17 @@ const Situation = () => {
         const situationArray = `${down}, ${ydsToGo}, ${ydLine100}, ${goalToGo}, ${qtrSeconds}, ${halfSeconds}, ${gameSeconds}, ${scoreDiff}, ${offenseTimeouts}, ${defenseTimeouts}, ${offenseTeam}, ${defenseTeam}`;
         console.log(`Situation Array: ${situationArray}`);
 
-        // Navigate to result page with situation data
+        // Call the Flask endpoint to submit the situation and get play visualization
+        await fetch(`http://localhost:5000/suggestPlay/${situationArray}`, { method: 'GET' })
+            .then(response => response.text())
+            .then(data => {
+                console.log("Response from Flask endpoint:", data);
+            })
+            .catch(error => {
+                console.error("Error calling Flask endpoint:", error);
+            });
+
+        // Navigate to result page with situation data and show the play visualization
         navigate('/result', { 
             state: { 
                 situationArray,
@@ -333,7 +343,7 @@ const Situation = () => {
                                 }
                             }}
                             placeholder="10"
-                            style={{ fontSize: '72px', width: '120px', color: '#fbf7fbff' }}
+                            style={{ fontSize: '72px', width: '120px', color: '#ff69ff' }}
                         />
                     </div>
                     

@@ -11,13 +11,14 @@
 
 from pbp_situation_model import train_pbp_model, predict_play
 from run_model import train_run_models, predict_run_metrics
+from pass_model import train_pass_models, predict_pass_metrics
 from routeDrawer.playDraw import visualize_play
 
 
 if __name__ == "__main__":
     # Test situations to predict play type - [down, ydstogo, yardline_100, goal_to_go, quarter_seconds_remaining, half_seconds_remaining, game_seconds_remaining, score_differential, posteam_timeouts_remaining, defteam_timeouts_remaining, posteam, defteam]
-    test_case_1 = [2, 5, 30, 0, 720, 720, 2520, 0, 3, 3, 'KC', 'BUF'] # 2nd & 5 from opponent's 30-yard line, Q2-12:00, tied game, balanced situation
-    # test_case_2 = [3, 8, 50, 0, 180, 1080, 1080, -3, 2, 3, 'GB', 'DAL'] # 3rd & 8 from midfield, Q3-3:00, down by 3, passing situation
+    # test_case_1 = [2, 5, 30, 0, 720, 720, 2520, 0, 3, 3, 'KC', 'BUF'] # 2nd & 5 from opponent's 30-yard line, Q2-12:00, tied game, balanced situation
+    test_case_2 = [3, 8, 50, 0, 180, 1080, 1080, -3, 2, 3, 'GB', 'DAL'] # 3rd & 8 from midfield, Q3-3:00, down by 3, passing situation
     # test_case_3 = [1, 10, 75, 0, 480, 1380, 3180, 7, 3, 3, 'SF', 'SEA'] # 1st & 10 from own 25-yard line, Q1-8:00, ahead by 7, balanced situation
     # test_case_4 = [1, 8, 8, 1, 95, 95, 95, -4, 1, 2, 'NE', 'NYG'] # 1st & Goal from 8-yard line, Q4-1:35, down by 4, red zone situation  
     # test_case_5 = [4, 2, 35, 0, 45, 45, 45, -6, 0, 1, 'TB', 'DET'] # 4th & 2 from opponent's 35, Q4-0:45, down by 6, desperation situation
@@ -27,7 +28,7 @@ if __name__ == "__main__":
 
     # all_test_cases = [test_case_1, test_case_2, test_case_3, test_case_4, test_case_5, test_case_6, test_case_7, test_case_8]
 
-    all_test_cases = [test_case_1]
+    all_test_cases = [test_case_2]
 
 
     ''' Predict whether the play for the given situation should be a run or pass '''
@@ -39,6 +40,10 @@ if __name__ == "__main__":
 
     # Train the Run Models 
     all_run_models = train_run_models()
+
+    # Train the Pass Models
+    all_pass_models = train_pass_models()
+
 
     for test_case in all_test_cases:
         # Predict the most optimal play for each situation
@@ -86,5 +91,42 @@ if __name__ == "__main__":
 
             visualize_play(run_play_input)
 
-        
+        elif prediction == 'pass':
+            pass_prediction = predict_pass_metrics(test_case, all_pass_models)
+            pass_length = pass_prediction['pass_length']
+            pass_location = pass_prediction['pass_location']
+            offense_formation = pass_prediction['offense_formation']
+            offense_personnel = pass_prediction['offense_personnel']
+            route = pass_prediction['route']
+            receiver_position = pass_prediction['receiver_position']
+
+            print(f"Pass Prediction Metrics:")
+            print(f"Pass Length: {pass_length}")
+            print(f"Pass Location: {pass_location}")
+            print(f"Offense Formation: {offense_formation}")
+            print(f"Offense Personnel: {offense_personnel}")
+            print(f"Route: {route}")
+            print(f"Receiver Position: {receiver_position}")
+
+            pass_play_input = {
+                "yardline_100": test_case[2],
+                "down": test_case[0],
+                "ydstogo": test_case[1],
+                "pass_length": pass_length,
+                "pass_location": pass_location,
+                "air_yards": 10, # Placeholder value    
+                "run_location": None,
+                "run_gap": None,
+                "rusher": None,
+                "receiver": 'N/A',
+                "offense_formation": offense_formation,
+                "offense_personnel": offense_personnel,
+                "route": route,
+                "involved_player_position": receiver_position
+            }
+
+            visualize_play(pass_play_input)
+
+        else:
+            print("Unknown play type")
     

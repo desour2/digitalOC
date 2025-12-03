@@ -1,10 +1,12 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_file
 from flask_cors import CORS
 import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend for Flask
 import matplotlib.pyplot as plt
 
 from pbp_situation_model import train_pbp_model, predict_play
 from run_model import train_run_models, predict_run_metrics
+from pass_model import train_pass_models, predict_pass_metrics
 from routeDrawer.playDraw import visualize_play
 
 
@@ -15,13 +17,12 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 pbp_model = None
 pbp_feature_columns = None
 run_models = None
-pass_model = None
-pass_feature_columns = None
+pass_models = None
 
 
 def train_all_models():
     """Train all models on application startup."""
-    global pbp_model, pbp_feature_columns, run_models, pass_model, pass_feature_columns
+    global pbp_model, pbp_feature_columns, run_models, pass_models
     
     print("=" * 60)
     print("Training models on Flask app startup...")
@@ -57,9 +58,12 @@ def train_all_models():
     print("3. Training Pass model...")
     print("-" * 60)
     try:
-        from pass_model import train_pass_model
-        pass_model, pass_feature_columns, df_pass_processed = train_pass_model()
-        print("✓ Pass model trained successfully")
+        from pass_model import train_pass_models
+        pass_models = train_pass_models()
+        if pass_models:
+            print("✓ Pass models trained successfully")
+        else:
+            print("✗ Pass model training returned empty dictionary")
     except Exception as e:
         print(f"✗ Error training Pass model: {e}")
         # Don't raise for pass model since it's optional
@@ -133,20 +137,56 @@ def suggest_play(situation):
             "involved_player_position": "RB"
         }
 
-        # Play visualization will be displayed as a separate window in the frontend
+        # Play visualization will be saved to play_visualization.png
         visualize_play(run_play_input)
 
 
     elif prediction == 'pass':
-        # For pass plays, we would ideally call a function to predict pass metrics
-        # Since that function is not defined, we will just print a placeholder
-        print("Pass Prediction: [Placeholder for pass metrics prediction]")
+        pass_prediction = predict_pass_metrics(situation, trained_models=pass_models)
+        pass_length = pass_prediction['pass_length']
+        pass_location = pass_prediction['pass_location']
+        offense_formation = pass_prediction['offense_formation']
+        offense_personnel = pass_prediction['offense_personnel']
+        route = pass_prediction['route']
+        receiver_position = pass_prediction['receiver_position']
+
+        print(f"Pass Prediction Metrics:")
+        print(f"Pass Length: {pass_length}")
+        print(f"Pass Location: {pass_location}")
+        print(f"Offense Formation: {offense_formation}")
+        print(f"Offense Personnel: {offense_personnel}")
+        print(f"Route: {route}")
+        print(f"Receiver Position: {receiver_position}")
+
+        pass_play_input = {
+            "yardline_100": situation[2],
+            "down": situation[0],
+            "ydstogo": situation[1],
+            "pass_length": pass_length,
+            "pass_location": pass_location,
+            "air_yards": 10, # Placeholder value    
+            "run_location": None,
+            "run_gap": None,
+            "rusher": None,
+            "receiver": 'N/A',
+            "offense_formation": offense_formation,
+            "offense_personnel": offense_personnel,
+            "route": route,
+            "involved_player_position": receiver_position
+        }
+
+        # Play visualization will be saved to play_visualization.png
+        visualize_play(pass_play_input)
 
     else:
         print("Unknown play type prediction.")
 
-
     return "Success"
+
+
+@app.route("/playVisualization", methods=['GET'])
+def get_play_visualization():
+    return send_file('play_visualization.png', mimetype='image/png')
 
 
 if __name__ == "__main__":
