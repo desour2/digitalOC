@@ -31,3 +31,12 @@ __pycache__/add_participation_features.cpython-311.pyc
 __pycache__/add_participation_features.cpython-311.pyc
 __pycache__/add_participation_features.cpython-311.pyc
 __pycache__/add_participation_features.cpython-311.pyc
+routeDrawer/__pycache__/playDraw.cpython-311.pyc
+__pycache__/dataParsing.cpython-313.pyc
+
+# Trained ML models (can be large binary files)
+models/
+*.pkl
+*.joblib
+__pycache__/model_utils.cpython-311.pyc
+__pycache__/pass_model.cpython-311.pyc

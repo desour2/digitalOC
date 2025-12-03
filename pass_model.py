@@ -1,4 +1,3 @@
-
 import time
 import json
 from pathlib import Path
@@ -201,6 +200,7 @@ def train_target_model(X: pd.DataFrame, y: pd.Series, target: str) -> Dict[str, 
         "accuracy": float(acc),
         "train_time_s": elapsed,
         "classes": clf.classes_.tolist() if hasattr(clf, "classes_") else [],
+        "feature_columns": X_train.columns.tolist(),
     }
 
 def train_all_targets(df: pd.DataFrame, targets: List[str]) -> Dict[str, Dict[str, Any]]:
@@ -263,7 +263,7 @@ def print_summary(trained_models: Dict[str, Dict[str, Any]]):
     for t, v in trained_models.items():
         print(f"{t:20} | Acc: {v['accuracy']:.3f} | Time: {v['train_time_s']:.1f}s | Classes: {len(v['classes'])}")
 
-def main():
+def train_pass_models():
     start = time.time()
     print("=== Pass Model ===")
     df = load_first_existing(DATA_FILES)
@@ -277,5 +277,42 @@ def main():
     print(f"\nTotal time: {(time.time() - start)/60:.2f} minutes")
     return trained
 
+def predict_pass_metrics(situation, trained_models):
+    ''' 
+        Function that predicts the most optimal pass metrics 
+        (including: reciever position, route, offense personnel, offense_formation, pass_length, pass_location)
+    '''
+
+    # Convert input to DataFrame with correct column names
+    situation_df = pd.DataFrame([situation], columns=['down', 'ydstogo', 'yardline_100', 'goal_to_go', 'quarter_seconds_remaining',
+                                                      'half_seconds_remaining', 'game_seconds_remaining', 'score_differential', 
+                                                      'posteam_timeouts_remaining', 'defteam_timeouts_remaining', 'posteam', 'defteam'])
+
+    # Add the football intelligence features
+    situation_df = add_football_intelligence_features(situation_df)
+
+    # Prepare the feature set
+    features = build_global_feature_set(situation_df)
+    situation_encoded, feature_cols = global_encode(situation_df, features)
+    predictions = {}
+
+    for target, model_info in trained_models.items():
+        model = model_info['model']
+        model_features = model_info['feature_columns']
+
+        # Ensure the situation_encoded has all the features required by the model
+        for col in model_features:
+            if col not in situation_encoded.columns:
+                situation_encoded[col] = 0
+        
+        # Reorder columns to match model's expected input
+        situation_input = situation_encoded[model_features]
+
+        # Make prediction
+        pred = model.predict(situation_input)
+        predictions[target] = pred[0]
+
+    return predictions
+
 if __name__ == "__main__":
-    main()
+    train_pass_models()

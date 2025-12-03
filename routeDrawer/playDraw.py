@@ -462,12 +462,14 @@ def visualize_play(play_data):
     labels = unique_labels.keys()
     
     ax.legend(handles=handles, labels=labels, loc='lower left')
+
+    # Save plot instead of showing it with plt.show() (for Flask compatibility)
+    plt.savefig('play_visualization.png', dpi=150, bbox_inches='tight')
+    plt.close()  # Close the figure to free memory
     
-    plt.show()
-
+    
 if __name__ == "__main__":
-
-# test pass play
+    # test pass play
     pass_play_input = {
         "yardline_100": 25,
         "down": 1,
@@ -485,7 +487,7 @@ if __name__ == "__main__":
         "involved_player_position": "WR"
     }
 
-# test run play
+    # test run play
     run_play_input = {
         "yardline_100": 40,
         "down": 2,

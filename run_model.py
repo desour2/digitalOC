@@ -140,7 +140,6 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
         "quarter_seconds_remaining",
         "half_seconds_remaining",
         "game_seconds_remaining",
-        "half_seconds_remaining", # Added back in
         "score_differential",
         "posteam_timeouts_remaining",
         "defteam_timeouts_remaining",
@@ -413,7 +412,7 @@ def predict_run_metrics(situation, trained_models):
     
     # Predict the most optimal metric (gap, location) for the run play 
     run_metrics = {}
-    for metric in ["run_gap", "run_location", "offense_formation"]:
+    for metric in ["run_gap", "run_location", "offense_formation", "personnel_off"]:
         if metric in trained_models:
             model_info = trained_models[metric]
             model = model_info["model"]

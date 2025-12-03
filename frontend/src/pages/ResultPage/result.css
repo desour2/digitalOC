@@ -76,6 +76,16 @@
     color: #ff69ff;
 }
 
+.visualization-image {
+    display: block;
+    max-width: 45%;
+    height: auto;
+    margin: 0 auto 40px;
+    border: 3px solid white;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
 .back-button {
     display: block;
     margin: 40px auto 0;
