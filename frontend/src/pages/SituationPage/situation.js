@@ -123,7 +123,7 @@ const Situation = () => {
         'JAX': { primary: '#000000', secondary: '#006778' },
         'KC': { primary: '#e31837', secondary: '#ffb612' },
         'LAC': { primary: '#0080c6', secondary: '#ffc20e' },
-        'LAR': { primary: '#002244', secondary: '#fffff8' },
+        'LAR': { primary: '#032287ff', secondary: '#fdfd00ff' },
         'LV': { primary: '#000000', secondary: '#a5acaf' },
         'MIA': { primary: '#008e97', secondary: '#fc4c02' },
         'MIN': { primary: '#4f2683', secondary: '#ffc62f' },
