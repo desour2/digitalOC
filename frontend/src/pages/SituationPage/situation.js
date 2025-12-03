@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import { useNavigate } from 'react-router-dom';
 import TeamDropdownMenu from '../../components/team_dropdown';
 import './situation.css';
@@ -67,6 +67,9 @@ const Situation = () => {
     // Timeout attributes
     const [offenseTimeouts, setOffenseTimeouts] = useState("0"); 
     const [defenseTimeouts, setDefenseTimeouts] = useState("0");
+
+    // Cycling tips state
+    const [currentTipIndex, setCurrentTipIndex] = useState(0);
     
     // Team data with logos
     const teams = [
@@ -131,7 +134,7 @@ const Situation = () => {
         'NO': { primary: '#d3bc8d', secondary: '#000000' },
         'NYG': { primary: '#0b2265', secondary: '#a71930' },
         'NYJ': { primary: '#003f2d', secondary: '#fffff8' },
-        'PHI': { primary: '#18675bff', secondary: '#a5acaf' },
+        'PHI': { primary: '#18675b', secondary: '#a5acaf' },
         'PIT': { primary: '#000000', secondary: '#ffb612' },
         'SEA': { primary: '#002244', secondary: '#69be28' },
         'SF': { primary: '#d50a0a', secondary: '#b3995d' },
@@ -179,6 +182,21 @@ const Situation = () => {
         }
         return 'rgba(40, 30, 70, 0.9)'; // Default background
     };
+
+    // Tips array
+    const tips = [
+        "Tip: use up/down arrows and tab for a smoother experience!",
+        "Tip: make sure to update the timeouts located under the score!"
+    ];
+
+    // Cycle tips every 5 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentTipIndex((prevIndex) => (prevIndex + 1) % tips.length);
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, [tips.length]);
     
     // Open team selector
     const openTeamSelector = (type) => {
@@ -236,8 +254,13 @@ const Situation = () => {
     }
 
     async function submitSituation() {
+        // Default timeouts to 0 if not selected
+        const finalOffenseTimeouts = offenseTimeouts || '0';
+        const finalDefenseTimeouts = defenseTimeouts || '0';
+        
         // Ensure no required fields are left blank
-        if (!offenseTeam || !defenseTeam || !down || !ydsToGo || !ownOppMidfield || (ownOppMidfield !== 'midfield' && !ydLine50) || offensePoints === '' || offensePoints === undefined || defensePoints === '' || defensePoints === undefined || !quarter || minutes === '' || minutes === undefined || seconds === '' || seconds === undefined) {
+        if (!offenseTeam || !defenseTeam || !down || !ydsToGo || !ownOppMidfield || (ownOppMidfield !== 'midfield' && !ydLine50) || offensePoints === '' ||
+         offensePoints === undefined || defensePoints === '' || defensePoints === undefined || !quarter || minutes === '' || minutes === undefined || seconds === '' || seconds === undefined) {
             alert("Please fill out all required fields before submitting the situation.");
             return;
         }
@@ -253,7 +276,7 @@ const Situation = () => {
         console.log(`${down}${down === '1' ? 'st' : down === '2' ? 'nd' : down === '3' ? 'rd' : 'th'} & ${ydsToGo} from ${ownOppMidfield} ${ownOppMidfield !== 'midfield' ? ydLine50 : ''}`);
         console.log(`Score (offense - defense) is ${offensePoints} - ${defensePoints}`);
         console.log(`Timestamp: ${quarter}${quarter === '1' ? 'st' : quarter === '2' ? 'nd' : quarter === '3' ? 'rd' : quarter === '4' ? 'th' : ''} at ${minutes}:${seconds}`);
-        console.log(`Timeouts remaining: Offense ${offenseTimeouts}, Defense ${defenseTimeouts}`);
+        console.log(`Timeouts remaining: Offense ${finalOffenseTimeouts}, Defense ${finalDefenseTimeouts}`);
         
         // Calculate necessary values for the situation array as needed by the backend model
         const ydLine100 = (ownOppMidfield === "own" ? 100 - parseInt(ydLine50) : ownOppMidfield === "midfield" ? 50 : ownOppMidfield === "opp" ? parseInt(ydLine50) : undefined);
@@ -264,7 +287,7 @@ const Situation = () => {
         const gameSeconds = await calculateGameSeconds(quarter, minutes, seconds);
 
         // Situation array that will be used to call the backend and PBP model
-        const situationArray = `${down}, ${ydsToGo}, ${ydLine100}, ${goalToGo}, ${qtrSeconds}, ${halfSeconds}, ${gameSeconds}, ${scoreDiff}, ${offenseTimeouts}, ${defenseTimeouts}, ${offenseTeam}, ${defenseTeam}`;
+        const situationArray = `${down}, ${ydsToGo}, ${ydLine100}, ${goalToGo}, ${qtrSeconds}, ${halfSeconds}, ${gameSeconds}, ${scoreDiff}, ${finalOffenseTimeouts}, ${finalDefenseTimeouts}, ${offenseTeam}, ${defenseTeam}`;
         console.log(`Situation Array: ${situationArray}`);
 
         // Call the Flask endpoint to submit the situation and get play visualization
@@ -292,8 +315,8 @@ const Situation = () => {
                 quarter,
                 minutes,
                 seconds,
-                offenseTimeouts,
-                defenseTimeouts
+                offenseTimeouts: finalOffenseTimeouts,
+                defenseTimeouts: finalDefenseTimeouts
             } 
         });
 
@@ -343,7 +366,7 @@ const Situation = () => {
                                 }
                             }}
                             placeholder="10"
-                            style={{ fontSize: '72px', width: '120px', color: '#ff69ff' }}
+                            style={{ fontSize: '72px', width: '120px', color: '#fffff8' }}
                         />
                     </div>
                     
@@ -627,7 +650,7 @@ const Situation = () => {
                 borderRadius: '8px',
                 border: '1px solid rgba(255, 255, 255, 0.3)'
             }}>
-                Tip: use up/down arrows and tab for a smoother experience
+                {tips[currentTipIndex]}
             </div>
 
             {/* Team Selector Modal */}

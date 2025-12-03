@@ -37,55 +37,66 @@ const Result = () => {
 
     return (
         <div className="result-container">
+            <button className="back-button" onClick={() => navigate('/situation')}>
+                ← Back to Situation
+            </button>
+            
             <h1 className="result-title">SITUATION RESULT</h1>
             
             <div className="result-content">
-                <h2>Raw Situation Array:</h2>
-                <pre className="situation-output">{situationData.situationArray}</pre>
-                
-                <h2>Situation Details:</h2>
-                <div className="details-grid">
-                    <div className="detail-item">
-                        <span className="detail-label">Offense:</span>
-                        <span className="detail-value">{situationData.offenseTeam}</span>
+                <div className="left-column">
+                    <div className="left-section">
+                        <h2>Situation Details:</h2>
+                        <div className="details-list">
+                        <div className="detail-item">
+                            <span className="detail-label">Offense:</span>
+                            <span className="detail-value">{situationData.offenseTeam}</span>
+                        </div>
+                        <div className="detail-item">
+                            <span className="detail-label">Defense:</span>
+                            <span className="detail-value">{situationData.defenseTeam}</span>
+                        </div>
+                        <div className="detail-item">
+                            <span className="detail-label">Score:</span>
+                            <span className="detail-value">{situationData.offensePoints} - {situationData.defensePoints}</span>
+                        </div>
+                        <div className="detail-item">
+                            <span className="detail-label">Field Position:</span>
+                            <span className="detail-value">
+                                {situationData.ownOppMidfield === 'midfield' ? 'Midfield' : `${situationData.ownOppMidfield.toUpperCase()} ${situationData.ydLine50}`}
+                            </span>
+                        </div>
+                        
+                        
+                        
+                        <div className="detail-item">
+                            <span className="detail-label">Down & Distance:</span>
+                            <span className="detail-value">{situationData.down} & {situationData.ydsToGo}</span>
+                        </div>
+                        <div className="detail-item">
+                            <span className="detail-label">Time:</span>
+                            <span className="detail-value">Q{situationData.quarter} - {situationData.minutes}:{String(situationData.seconds).padStart(2, '0')}</span>
+                        </div>
+                        <div className="detail-item">
+                            <span className="detail-label">Timeouts:</span>
+                            <span className="detail-value">OFF: {situationData.offenseTimeouts}, DEF: {situationData.defenseTimeouts}</span>
+                        </div>
                     </div>
-                    <div className="detail-item">
-                        <span className="detail-label">Defense:</span>
-                        <span className="detail-value">{situationData.defenseTeam}</span>
                     </div>
-                    <div className="detail-item">
-                        <span className="detail-label">Down & Distance:</span>
-                        <span className="detail-value">{situationData.down} & {situationData.ydsToGo}</span>
-                    </div>
-                    <div className="detail-item">
-                        <span className="detail-label">Field Position:</span>
-                        <span className="detail-value">
-                            {situationData.ownOppMidfield === 'midfield' ? 'Midfield' : `${situationData.ownOppMidfield.toUpperCase()} ${situationData.ydLine50}`}
-                        </span>
-                    </div>
-                    <div className="detail-item">
-                        <span className="detail-label">Score:</span>
-                        <span className="detail-value">{situationData.offensePoints} - {situationData.defensePoints}</span>
-                    </div>
-                    <div className="detail-item">
-                        <span className="detail-label">Time:</span>
-                        <span className="detail-value">Q{situationData.quarter} - {situationData.minutes}:{String(situationData.seconds).padStart(2, '0')}</span>
-                    </div>
-                    <div className="detail-item">
-                        <span className="detail-label">Timeouts:</span>
-                        <span className="detail-value">OFF: {situationData.offenseTimeouts}, DEF: {situationData.defenseTimeouts}</span>
+
+                    <div className="left-section">
+                        <h2>Raw Situation Array:</h2>
+                        <pre className="situation-output">{situationData.situationArray}</pre>
                     </div>
                 </div>
 
-                <h2>Play Visualization:</h2>
-                <div className="visualization-container">
-                    <img src={visualizationImage} alt="Play Visualization" className="visualization-image" />
+                <div className="right-column">
+                    <div className="visualization-container">
+                        <h2>Play Visualization:</h2>
+                        <img src={visualizationImage} alt="Play Visualization" className="visualization-image" />
+                    </div>
                 </div>
             </div>
-
-            <button className="back-button" onClick={() => navigate('/situation')}>
-                Back to Situation
-            </button>
         </div>
     );
 };
