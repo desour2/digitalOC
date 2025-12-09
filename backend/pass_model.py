@@ -11,6 +11,10 @@ from sklearn.metrics import accuracy_score, classification_report
 import joblib
 
 DATA_FILES = ["Data/merged_pass_model_data_2020.csv"]
+DATA_FILES.append("Data/merged_pass_model_data_2021.csv")
+DATA_FILES.append("Data/merged_pass_model_data_2022.csv")
+DATA_FILES.append("Data/merged_pass_model_data_2023.csv")
+DATA_FILES.append("Data/merged_pass_model_data_2024.csv")
 OUTPUT_DIR = Path("models")
 OUTPUT_DIR.mkdir(exist_ok=True)
 

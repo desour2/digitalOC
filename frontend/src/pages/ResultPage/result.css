@@ -84,6 +84,57 @@
     color: #ff69ff;
 }
 
+.detail-input {
+    background: rgba(40, 30, 70, 0.9);
+    border: 2px solid rgba(255, 105, 255, 0.5);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #ff69ff;
+    font-family: 'Orbitron', 'Arial', sans-serif;
+    text-align: center;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.detail-input:focus {
+    border-color: #ff69ff;
+    box-shadow: 0 0 10px rgba(255, 105, 255, 0.5);
+}
+
+.detail-input::placeholder {
+    color: rgba(255, 105, 255, 0.4);
+}
+
+.score-input {
+    width: 60px;
+}
+
+.update-button {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #ff69ff 0%, #d946ff 100%);
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: white;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 0 3px 8px rgba(255, 105, 255, 0.4);
+    transition: all 0.3s ease;
+}
+
+.update-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(255, 105, 255, 0.6);
+}
+
+.update-button:active {
+    transform: translateY(0);
+}
+
 .situation-output {
     background: rgba(40, 30, 70, 0.9);
     border: 2px solid white;

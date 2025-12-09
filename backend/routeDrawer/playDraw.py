@@ -165,13 +165,14 @@ def get_route_path(route_name, start_pos, position, location, air_yards):
             'FLAT':     lambda _: [(3, 1), (5, 1)],
             'SCREEN':   lambda _: [(-3, 0), (-5, -2)], # WR Screen
             'WHEEL':    lambda _: [(3, 1), (5, 3), (5, 8), (3, 12), (0, 15)],
+            'CROSS':    lambda y: [(-2, y*0.2), (-6, y*0.5), (-11, y*0.8), (-15, y)],
         }
         
         route_func = ROUTE_DEFINITIONS.get(route_key, lambda y: [(0, y*0.5), (1, y)]) # Default "UNKNOWN"
         relative_path = route_func(y) 
 
     if is_left_side and not (route_key == 'SCREEN' and position == 'RB'):
-        mirror_routes = ['OUT', 'FLAT', 'IN', 'SLANT', 'FADE', 'CURL', 'SCREEN'] 
+        mirror_routes = ['OUT', 'FLAT', 'IN', 'SLANT', 'FADE', 'CURL', 'SCREEN', 'CROSS'] 
         if route_key in mirror_routes:
             relative_path = [(-x, y) for x, y in relative_path]
 
@@ -225,29 +226,35 @@ def parse_personnel(personnel_str):
                 continue 
     return counts
 
-def get_default_alignments(personnel_counts, formation, play_type='pass', location=None):
+def get_default_alignments(personnel_counts, formation, play_type='pass', location=None, occupied_slot=None):
     alignments = []
     
+    formation_str = str(formation).upper()
+    
     # Determine Backfield Depth
-    if 'SHOTGUN' in str(formation).upper():
+    if 'SHOTGUN' in formation_str:
         backfield_y = -5
-    elif 'SINGLEBACK' in str(formation).upper() or 'I_FORM' in str(formation).upper():
-        backfield_y = -5 # Tailback depth
-    elif 'PISTOL' in str(formation).upper():
-        backfield_y = -7.5
+    elif 'SINGLEBACK' in formation_str or 'I_FORM' in formation_str:
+        backfield_y = -5 
+    elif 'PISTOL' in formation_str:
+        backfield_y = -7.5 # Deep tailback for Pistol
     else:
-        backfield_y = -5 # Default
+        backfield_y = -5
 
     # Define Default Slots
     WR_SLOTS = [
         (-18, -0.5), # WR 1 (Left Wide)
         (18, -0.5),  # WR 2 (Right Wide)
-        (-12, -0.5), # WR 3 (Left Slot)
-        (12, -0.5)   # WR 4 (Right Slot)
+        (-12, -1), # WR 3 (Left Slot)
+        (12, -1),  # WR 4 (Right Slot)
+        (6, -0.5),   # WR 5 (Inner Right)
+        (-6, -0.5)   # WR 6 (Inner Left - Safety valve)
     ]
     
-    TE_SLOT_RIGHT = (6, -0.5)
-    TE_SLOT_LEFT = (-6, -0.5)
+    TE_SLOT_RIGHT = (6, -1)
+    TE_SLOT_LEFT = (-6, -1)
+    
+    # Setup TE Slots based on run side
     is_run = play_type == 'run'
     run_side = str(location).lower()
 
@@ -256,52 +263,80 @@ def get_default_alignments(personnel_counts, formation, play_type='pass', locati
     elif is_run and run_side == 'right':
         TE_SLOTS = [TE_SLOT_RIGHT, TE_SLOT_LEFT]
     else:
+        # Default pass protection or unknown
         TE_SLOTS = [TE_SLOT_RIGHT, TE_SLOT_LEFT]
         
-    OFFSET_RB_SLOTS = [
-        (2, backfield_y),  # RB 1 (Right Offset)
-        (-2, backfield_y) # RB 2 (Left Offset)
-    ]
-    I_FORM_RB_SLOTS = [
-        (0, -3), # FB
-        (0, -5)  # TB
-    ]
+    # --- RB SLOT LOGIC ---
+    OFFSET_RB_SLOTS = [(2, -5), (-2, -5)]
+    I_FORM_RB_SLOTS = [(0, -3), (0, -5)] # FB, TB
     
-    # Fill Slots
-    is_empty = 'EMPTY' in str(formation).upper()
-    is_iform = 'I_FORM' in str(formation).upper()
-    is_singleback = 'SINGLEBACK' in str(formation).upper()
-    is_pistol = 'PISTOL' in str(formation).upper()
+    # Pistol Specific Logic (Deep Tailback + Sidecar)
+    # Sidecar is usually at -4y depth, next to QB (who is at 0)
+    if run_side == 'left':
+        # If run is left, put sidecar on left
+        PISTOL_RB_SLOTS = [(0, backfield_y), (-4, -4)] 
+    else:
+        # Default/Right run -> sidecar on right
+        PISTOL_RB_SLOTS = [(0, backfield_y), (4, -4)]
+    # ---------------------
     
+    # Initialize available slots
     available_wr_slots = WR_SLOTS.copy()
     available_te_slots = TE_SLOTS.copy()
     
-    if is_iform:
+    # Select the correct RB slots based on formation
+    if 'I_FORM' in formation_str:
         available_rb_slots = I_FORM_RB_SLOTS.copy()
-    elif is_singleback or is_pistol:
-        available_rb_slots = [(0, backfield_y)] # Use the (0, -5) slot
+    elif 'PISTOL' in formation_str:
+        available_rb_slots = PISTOL_RB_SLOTS.copy()
+    elif 'SINGLEBACK' in formation_str:
+         # Singleback generally only allows 1 RB slot
+        available_rb_slots = [(0, backfield_y)]
     else:
+        # Shotgun / Default
         available_rb_slots = OFFSET_RB_SLOTS.copy()
+
+    # --- Remove the slot occupied by the target ---
+    if occupied_slot:
+        # Check WR slots
+        if occupied_slot in available_wr_slots:
+            available_wr_slots.remove(occupied_slot)
+        # Check TE slots
+        if occupied_slot in available_te_slots:
+            available_te_slots.remove(occupied_slot)
+        # Check RB slots
+        # We use a slight tolerance for floats, or direct comparison if integers match
+        # But since start_pos comes from specific logic, direct tuple check usually works
+        if occupied_slot in available_rb_slots:
+            available_rb_slots.remove(occupied_slot)
+    # -----------------------------------------------
+
+    is_empty = 'EMPTY' in formation_str
 
     # 1. Place TEs
     for _ in range(personnel_counts.get('TE', 0)):
         if available_te_slots:
-            slot = available_te_slots.pop(0) 
+            slot = available_te_slots.pop(0)
             alignments.append(('TE', slot))
             if slot in available_wr_slots:
                 available_wr_slots.remove(slot)
                 
     # 2. Place WRs
-    for _ in range(personnel_counts.get('WR', 0)):
+    for i in range(personnel_counts.get('WR', 0)):
         if available_wr_slots:
             slot = available_wr_slots.pop(0)
-            alignments.append(('WR', slot))
-            if slot in available_te_slots:
-                available_te_slots.remove(slot)
+        else:
+            # Fallback if out of slots
+            slot = (20 + (i * 2), -0.5) 
+            
+        alignments.append(('WR', slot))
+        if slot in available_te_slots:
+            available_te_slots.remove(slot)
 
     # 3. Place RBs
-    for _ in range(personnel_counts.get('RB', 0)):
+    for i in range(personnel_counts.get('RB', 0)):
         if is_empty:
+            # If empty, RBs act like receivers
             if available_wr_slots:
                 slot = available_wr_slots.pop(0)
                 alignments.append(('RB', slot))
@@ -313,7 +348,10 @@ def get_default_alignments(personnel_counts, formation, play_type='pass', locati
                 slot = available_rb_slots.pop(0)
                 alignments.append(('RB', slot))
             else:
-                alignments.append(('RB', (-2, backfield_y))) 
+                # Fallback for extra RBs in single-back sets
+                # Place them near the QB as extra blockers
+                side = 2 if i % 2 == 0 else -2
+                alignments.append(('RB', (side, -4))) 
                 
     return alignments
 
@@ -420,18 +458,18 @@ def visualize_play(play_data):
     
     personnel_counts = parse_personnel(personnel)
 
-    total_skill = sum(personnel_counts.values())
-    if total_skill < 5:
-        needed = 5 - total_skill
-        # Add the missing amount to Wide Receivers
-        personnel_counts['WR'] = personnel_counts.get('WR', 0) + needed
-        print(f"  > Adjusted Personnel: Added {needed} WRs to reach 5 skill players.")
+    current_skill_count = sum(personnel_counts.values())
+    
+    # If we have fewer than 5, fill the rest with WRs
+    if current_skill_count < 5:
+        missing_players = 5 - current_skill_count
+        personnel_counts['WR'] = personnel_counts.get('WR', 0) + missing_players
     
     # Subtract the targeted player from the count to avoid double plotting
     if position in personnel_counts:
         personnel_counts[position] -= 1
     
-    default_players = get_default_alignments(personnel_counts, formation, play_type, location)
+    default_players = get_default_alignments(personnel_counts, formation, play_type, location, occupied_slot=start_pos)
     
     has_ghost_label = False
     for pos, (x, y) in default_players:
@@ -476,7 +514,7 @@ def visualize_play(play_data):
     handles = unique_labels.values()
     labels = unique_labels.keys()
     
-    ax.legend(handles=handles, labels=labels, loc='lower left')
+    ax.legend(handles=handles, labels=labels, loc='upper left')
 
     # Save plot instead of showing it with plt.show() (for Flask compatibility)
     plt.savefig('play_visualization.png', dpi=150, bbox_inches='tight')

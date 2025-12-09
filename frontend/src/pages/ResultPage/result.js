@@ -8,6 +8,79 @@ const Result = () => {
     const situationData = location.state;
     const [visualizationImage, setVisualizationImage] = useState(null);
 
+    // Editable state for situation details
+    const [editableData, setEditableData] = useState({
+        offenseTeam: situationData?.offenseTeam || '',
+        defenseTeam: situationData?.defenseTeam || '',
+        offensePoints: situationData?.offensePoints || '',
+        defensePoints: situationData?.defensePoints || '',
+        ownOppMidfield: situationData?.ownOppMidfield || '',
+        ydLine50: situationData?.ydLine50 || '',
+        down: situationData?.down || '',
+        ydsToGo: situationData?.ydsToGo || '',
+        quarter: situationData?.quarter || '',
+        minutes: situationData?.minutes || '',
+        seconds: situationData?.seconds || '',
+        offenseTimeouts: situationData?.offenseTimeouts || '',
+        defenseTimeouts: situationData?.defenseTimeouts || ''
+    });
+
+    const handleInputChange = (field, value) => {
+        setEditableData(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
+
+    const submitUpdatedSituation = () => {
+        // Create updated situation array
+        const updatedSituationArray = [
+            editableData.down,
+            editableData.ydsToGo,
+            editableData.ownOppMidfield === 'midfield' ? 50 : 
+                (editableData.ownOppMidfield === 'opp' ? 
+                    parseInt(editableData.ydLine50) : 
+                    100 - parseInt(editableData.ydLine50)),
+            editableData.ownOppMidfield === 'midfield' ? 1 : 0,
+            editableData.quarter === 'OT' ? 5 : parseInt(editableData.quarter),
+            (parseInt(editableData.quarter) - 1) * 900 + (900 - (parseInt(editableData.minutes) * 60 + parseInt(editableData.seconds))),
+            (Math.ceil(parseInt(editableData.quarter) / 2) - 1) * 1800 + (1800 - (parseInt(editableData.minutes) * 60 + parseInt(editableData.seconds))),
+            parseInt(editableData.minutes) * 60 + parseInt(editableData.seconds),
+            parseInt(editableData.offensePoints) - parseInt(editableData.defensePoints),
+            parseInt(editableData.offenseTimeouts),
+            parseInt(editableData.defenseTimeouts),
+            editableData.offenseTeam,
+            editableData.defenseTeam
+        ].join(',');
+
+        // First, send the updated situation to the backend to generate new visualization
+        fetch(`http://localhost:5000/suggestPlay/${updatedSituationArray}`, { method: 'GET' })
+            .then(response => {
+                if (response.ok) {
+                    // After the backend generates the new visualization, fetch it
+                    return fetch('http://localhost:5000/playVisualization', { method: 'GET' });
+                }
+                throw new Error('Failed to generate play suggestion');
+            })
+            .then(response => response.blob())
+            .then(imageBlob => {
+                // Update the visualization image
+                const imageObjectURL = URL.createObjectURL(imageBlob);
+                setVisualizationImage(imageObjectURL);
+            })
+            .catch(error => {
+                console.error("Error updating play visualization:", error);
+            });
+
+        // Update the situationData display
+        navigate('/result', {
+            state: {
+                ...editableData,
+                situationArray: updatedSituationArray
+            }
+        }, { replace: true });
+    };
+
     useEffect(() => {
         console.log("Received situation data:", situationData);
 
@@ -46,40 +119,161 @@ const Result = () => {
             <div className="result-content">
                 <div className="left-column">
                     <div className="left-section">
-                        <h2>Situation Details:</h2>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                            <h2 style={{ margin: 0 }}>Situation Details:</h2>
+                            <button className="update-button" onClick={submitUpdatedSituation}>
+                                Update Situation
+                            </button>
+                        </div>
                         <div className="details-list">
                         <div className="detail-item">
                             <span className="detail-label">Offense:</span>
-                            <span className="detail-value">{situationData.offenseTeam}</span>
+                            <input 
+                                type="text" 
+                                className="detail-input" 
+                                value={editableData.offenseTeam}
+                                onChange={(e) => handleInputChange('offenseTeam', e.target.value)}
+                                maxLength={3}
+                            />
                         </div>
                         <div className="detail-item">
                             <span className="detail-label">Defense:</span>
-                            <span className="detail-value">{situationData.defenseTeam}</span>
+                            <input 
+                                type="text" 
+                                className="detail-input" 
+                                value={editableData.defenseTeam}
+                                onChange={(e) => handleInputChange('defenseTeam', e.target.value)}
+                                maxLength={3}
+                            />
                         </div>
                         <div className="detail-item">
                             <span className="detail-label">Score:</span>
-                            <span className="detail-value">{situationData.offensePoints} - {situationData.defensePoints}</span>
+                            <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                                <input 
+                                    type="number" 
+                                    className="detail-input score-input" 
+                                    value={editableData.offensePoints}
+                                    onChange={(e) => handleInputChange('offensePoints', e.target.value)}
+                                    style={{ width: '60px' }}
+                                />
+                                <span className="detail-value">-</span>
+                                <input 
+                                    type="number" 
+                                    className="detail-input score-input" 
+                                    value={editableData.defensePoints}
+                                    onChange={(e) => handleInputChange('defensePoints', e.target.value)}
+                                    style={{ width: '60px' }}
+                                />
+                            </div>
                         </div>
                         <div className="detail-item">
                             <span className="detail-label">Field Position:</span>
-                            <span className="detail-value">
-                                {situationData.ownOppMidfield === 'midfield' ? 'Midfield' : `${situationData.ownOppMidfield.toUpperCase()} ${situationData.ydLine50}`}
-                            </span>
+                            <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                                <select 
+                                    className="detail-input" 
+                                    value={editableData.ownOppMidfield}
+                                    onChange={(e) => handleInputChange('ownOppMidfield', e.target.value)}
+                                    style={{ width: '100px' }}
+                                >
+                                    <option value="own">OWN</option>
+                                    <option value="opp">OPP</option>
+                                    <option value="midfield">MIDFIELD</option>
+                                </select>
+                                {editableData.ownOppMidfield !== 'midfield' && (
+                                    <input 
+                                        type="number" 
+                                        className="detail-input" 
+                                        value={editableData.ydLine50}
+                                        onChange={(e) => handleInputChange('ydLine50', e.target.value)}
+                                        style={{ width: '60px' }}
+                                        min="1"
+                                        max="49"
+                                    />
+                                )}
+                            </div>
                         </div>
                         
                         
                         
                         <div className="detail-item">
                             <span className="detail-label">Down & Distance:</span>
-                            <span className="detail-value">{situationData.down} & {situationData.ydsToGo}</span>
+                            <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                                <input 
+                                    type="number" 
+                                    className="detail-input" 
+                                    value={editableData.down}
+                                    onChange={(e) => handleInputChange('down', e.target.value)}
+                                    style={{ width: '60px' }}
+                                    min="1"
+                                    max="4"
+                                />
+                                <span className="detail-value">&</span>
+                                <input 
+                                    type="number" 
+                                    className="detail-input" 
+                                    value={editableData.ydsToGo}
+                                    onChange={(e) => handleInputChange('ydsToGo', e.target.value)}
+                                    style={{ width: '60px' }}
+                                />
+                            </div>
                         </div>
                         <div className="detail-item">
                             <span className="detail-label">Time:</span>
-                            <span className="detail-value">Q{situationData.quarter} - {situationData.minutes}:{String(situationData.seconds).padStart(2, '0')}</span>
+                            <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                                <span className="detail-value">Q</span>
+                                <input 
+                                    type="text" 
+                                    className="detail-input" 
+                                    value={editableData.quarter}
+                                    onChange={(e) => handleInputChange('quarter', e.target.value)}
+                                    style={{ width: '50px' }}
+                                />
+                                <span className="detail-value">-</span>
+                                <input 
+                                    type="number" 
+                                    className="detail-input" 
+                                    value={editableData.minutes}
+                                    onChange={(e) => handleInputChange('minutes', e.target.value)}
+                                    style={{ width: '50px' }}
+                                    min="0"
+                                    max="15"
+                                />
+                                <span className="detail-value">:</span>
+                                <input 
+                                    type="number" 
+                                    className="detail-input" 
+                                    value={editableData.seconds}
+                                    onChange={(e) => handleInputChange('seconds', e.target.value)}
+                                    style={{ width: '50px' }}
+                                    min="0"
+                                    max="59"
+                                />
+                            </div>
                         </div>
                         <div className="detail-item">
                             <span className="detail-label">Timeouts:</span>
-                            <span className="detail-value">OFF: {situationData.offenseTimeouts}, DEF: {situationData.defenseTimeouts}</span>
+                            <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                                <span className="detail-value">OFF:</span>
+                                <input 
+                                    type="number" 
+                                    className="detail-input" 
+                                    value={editableData.offenseTimeouts}
+                                    onChange={(e) => handleInputChange('offenseTimeouts', e.target.value)}
+                                    style={{ width: '50px' }}
+                                    min="0"
+                                    max="3"
+                                />
+                                <span className="detail-value">DEF:</span>
+                                <input 
+                                    type="number" 
+                                    className="detail-input" 
+                                    value={editableData.defenseTimeouts}
+                                    onChange={(e) => handleInputChange('defenseTimeouts', e.target.value)}
+                                    style={{ width: '50px' }}
+                                    min="0"
+                                    max="3"
+                                />
+                            </div>
                         </div>
                     </div>
                     </div>
