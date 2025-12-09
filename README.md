@@ -127,13 +127,13 @@ Predicts expected metrics for pass plays:
 Custom Elo ratings categorized by play situation (e.g., early down, late & long, goal line) to capture team strength in different scenarios.
 
 ## 👥 Contributors
-**Noah Worobec** ([@nworobec](https://github.com/nworobec))
-**Russel C** ([@russelchao](https://github.com/russellchao))
-**Gavin C** ([@gavinc1225](https://github.com/gavinc1225))
-**Nicole S** ([@nstepanenko464](https://github.com/nstepanenko464))
-**Daniel M** ([@DanKMM](https://github.com/DanKMM))
-**Olakiite F** ([@fatuko](https://github.com/fatuko))
-**Rondalph T** ([legffy](https://github.com/legffy))
+**Noah Worobec** ([@nworobec](https://github.com/nworobec)),
+**Russel C** ([@russelchao](https://github.com/russellchao)),
+**Gavin C** ([@gavinc1225](https://github.com/gavinc1225)),
+**Nicole S** ([@nstepanenko464](https://github.com/nstepanenko464)),
+**Daniel M** ([@DanKMM](https://github.com/DanKMM)),
+**Olakiite F** ([@fatuko](https://github.com/fatuko)),
+**Rondalph T** ([legffy](https://github.com/legffy)),
 **Rafiki M** ([@RafikiMwethuku](https://github.com/RafikiMwethuku))
 
 
