@@ -4,7 +4,10 @@ import nflreadpy as nfl
 
 
 #pd.read_csv("data/pbp_participation_2024.csv")
-merged = pd.read_csv("data/2024_0_EloData.csv") 
+df0 = pd.read_csv("data/pbp_2020_0.csv")
+df1 = pd.read_csv("data/pbp_2020_1.csv")
+
+merged = pd.concat([df0, df1], ignore_index=True)
 
 
 class PlayClassifier:
@@ -370,7 +373,7 @@ for team in merged["posteam"].dropna().unique():
 elo_df = pd.DataFrame(team_elos).T  # Transpose so teams are rows
 
 # Save to CSV in the data directory
-elo_df.to_csv("data/team_elos_2024.csv", index_label="team")
+elo_df.to_csv("data/team_elos_2020.csv", index_label="team")
 
 
 
