@@ -419,6 +419,13 @@ def visualize_play(play_data):
     ax.plot(qb_pos[0], qb_pos[1], 'o', color='yellow', markersize=12, label=qb_label)
     
     personnel_counts = parse_personnel(personnel)
+
+    total_skill = sum(personnel_counts.values())
+    if total_skill < 5:
+        needed = 5 - total_skill
+        # Add the missing amount to Wide Receivers
+        personnel_counts['WR'] = personnel_counts.get('WR', 0) + needed
+        print(f"  > Adjusted Personnel: Added {needed} WRs to reach 5 skill players.")
     
     # Subtract the targeted player from the count to avoid double plotting
     if position in personnel_counts:
