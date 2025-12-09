@@ -91,13 +91,15 @@ def get_start_position(position, pass_location, formation):
     if 'SHOTGUN' in str(formation).upper():
         backfield_y = -5
     elif 'SINGLEBACK' in str(formation).upper() or 'I_FORM' in str(formation).upper():
-        backfield_y = -5 # Tailback depth for I_FORM and SINGLEBACK
+        backfield_y = -5 # Tailback depth for I_FORM, SINGLEBACK
+    elif 'PISTOL' in str(formation).upper():
+        backfield_y = -7.5
     else:
         backfield_y = -5 # Default to shotgun depth
 
     # RB (Running Back)
     if position == 'RB':
-        if 'I_FORM' in str(formation).upper() or 'SINGLEBACK' in str(formation).upper():
+        if 'I_FORM' in str(formation).upper() or 'SINGLEBACK' in str(formation).upper() or 'PISTOL' in str(formation).upper():
             return (0, backfield_y) # Tailback slot (0, -5)
         
         # Line up opposite the play direction in Shotgun
@@ -231,6 +233,8 @@ def get_default_alignments(personnel_counts, formation, play_type='pass', locati
         backfield_y = -5
     elif 'SINGLEBACK' in str(formation).upper() or 'I_FORM' in str(formation).upper():
         backfield_y = -5 # Tailback depth
+    elif 'PISTOL' in str(formation).upper():
+        backfield_y = -7.5
     else:
         backfield_y = -5 # Default
 
@@ -267,13 +271,14 @@ def get_default_alignments(personnel_counts, formation, play_type='pass', locati
     is_empty = 'EMPTY' in str(formation).upper()
     is_iform = 'I_FORM' in str(formation).upper()
     is_singleback = 'SINGLEBACK' in str(formation).upper()
+    is_pistol = 'PISTOL' in str(formation).upper()
     
     available_wr_slots = WR_SLOTS.copy()
     available_te_slots = TE_SLOTS.copy()
     
     if is_iform:
         available_rb_slots = I_FORM_RB_SLOTS.copy()
-    elif is_singleback:
+    elif is_singleback or is_pistol:
         available_rb_slots = [(0, backfield_y)] # Use the (0, -5) slot
     else:
         available_rb_slots = OFFSET_RB_SLOTS.copy()
@@ -403,6 +408,9 @@ def visualize_play(play_data):
     elif 'SINGLEBACK' in formation_str or 'I_FORM' in formation_str:
         qb_pos = (0, -1) # Under Center
         qb_label = 'QB (Under Center)'
+    elif 'PISTOL' in formation_str:
+        qb_pos = (0, -4)
+        qb_label = 'QB (Pistol)'
     else:
         qb_pos = (0, -1) # Default to under center
         qb_label = 'QB (Reference)'
@@ -411,6 +419,13 @@ def visualize_play(play_data):
     ax.plot(qb_pos[0], qb_pos[1], 'o', color='yellow', markersize=12, label=qb_label)
     
     personnel_counts = parse_personnel(personnel)
+
+    total_skill = sum(personnel_counts.values())
+    if total_skill < 5:
+        needed = 5 - total_skill
+        # Add the missing amount to Wide Receivers
+        personnel_counts['WR'] = personnel_counts.get('WR', 0) + needed
+        print(f"  > Adjusted Personnel: Added {needed} WRs to reach 5 skill players.")
     
     # Subtract the targeted player from the count to avoid double plotting
     if position in personnel_counts:
