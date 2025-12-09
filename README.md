@@ -49,14 +49,15 @@ digitalOC/
 │   │   │   ├── SituationPage/  # Game situation input
 │   │   │   └── ResultPage/  # Play recommendations & visualization
 │   │   └── logos/           # NFL team logos (32 teams)
-├── app.py                   # Flask API server
-├── pbp_situation_model.py   # Play type classification model
-├── run_model.py             # Run play metrics prediction
-├── pass_model.py            # Pass play metrics prediction
-├── TeamElo.py               # Team Elo rating system
-├── routeDrawer/             # Play visualization module
-├── data/                    # NFL datasets (PBP, Next Gen Stats)
-└── models/                  # Trained model artifacts
+└── backend/                 # Flask API and ML models
+    ├── app.py                   # Flask API server
+    ├── pbp_situation_model.py   # Play type classification model
+    ├── run_model.py             # Run play metrics prediction
+    ├── pass_model.py            # Pass play metrics prediction
+    ├── TeamElo.py               # Team Elo rating system
+    ├── routeDrawer/             # Play visualization module
+    ├── data/                    # NFL datasets (PBP, Next Gen Stats)
+    └── models/                  # Trained model artifacts
 ```
 
 ## 🚀 Getting Started
