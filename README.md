@@ -80,7 +80,12 @@ cd digitalOC
 pip install flask flask-cors pandas scikit-learn matplotlib numpy
 ```
 
-3. Start the Flask server:
+3. Navigate to backend directory:
+```bash
+cd backend
+```
+
+4. Start the Flask server:
 ```bash
 python app.py
 ```
