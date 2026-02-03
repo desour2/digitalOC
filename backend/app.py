@@ -23,6 +23,11 @@ pbp_model = joblib.load(model_dir / "pbp_situation_model.joblib")
 run_models = joblib.load(model_dir / "run_models.joblib")
 pass_models = joblib.load(model_dir / "pass_models.joblib")
 
+import json
+with open(model_dir / "pbp_situation_model_meta.json", 'r') as f:
+    metadata = json.load(f)
+pbp_feature_columns = metadata["feature_columns"]
+
 
 @app.route("/suggestPlay/<situation>", methods=['GET'])
 def suggest_play(situation):
@@ -42,9 +47,23 @@ def suggest_play(situation):
                  situation[10], situation[11]]
 
 
-    # Predict whether the play type for the given situation should be a run or pass
-    prediction, confidence = predict_play(situation, trained_model=pbp_model)
+    score_diff = abs(situation[7])
+    if score_diff > 16:
+        print("NOTICE: Game state is non-competitive. Suggestion may be biased by clock-management.")
 
+    
+    yardline = situation[2]
+    is_midfield_aggression = 1 if 35 <= yardline <= 45 else 0
+    is_deep_redzone = 1 if yardline <= 10 else 0
+
+    situation.append(is_midfield_aggression)
+    situation.append(is_deep_redzone)
+
+    # Predict whether the play type should be a run or pass
+    prediction_int, confidence = predict_play(situation, trained_model=pbp_model, feature_columns=pbp_feature_columns)
+
+    # 1 = Pass Intent (Passes, Sacks, Scrambles), 0 = Run Intent
+    prediction = 'pass' if prediction_int == 1 else 'run'
 
     # Depending on the prediction, feed it into the run or pass model
     if prediction == 'run':
