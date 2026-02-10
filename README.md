@@ -67,6 +67,19 @@ digitalOC/
 - Node.js 14+
 - npm or yarn
 
+### Model Training
+
+- ⚠️ Important: The trained model artifacts are not included in the repository due to size constraints. You will need to run the training scripts to generate the models before starting the backend server.
+
+-  Run the training scripts for each model:
+```bash
+cd backend
+python pbp_situation_model.py
+python run_model.py
+python pass_model.py
+```
+-  Trained model artifacts will be saved in the `backend/models/` directory.
+
 ### Backend Setup
 
 1. Clone the repository:
