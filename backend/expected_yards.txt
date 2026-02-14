@@ -1,0 +1,7 @@
+Overview on how the expected yards model will be implemented:
+
+1. Data Collection: 
+We will gather historical play-by-play data from the past few seasons, including information on the type of play, 
+the players involved, the field position, and the outcome of each play.
+
+2. Feature Engineering:
