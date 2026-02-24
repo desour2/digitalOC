@@ -29,22 +29,8 @@ def train_exp_yards_model_run():
         team = row["posteam"]
         category = row["play_category"]
         return team_elos.get(team, {}).get(category, 1000.0)
-    
-    # feature columns
     df_filtered["elo_score"] = df_filtered.apply(get_elo, axis=1)
-    X = df_filtered[['run_gap', 'run_location', 'posteam', 'defteam', 'elo_score', 'down', 'ydstogo', 'yardline_100', 
-                     'goal_to_go', 'quarter_seconds_remaining','half_seconds_remaining', 'game_seconds_remaining', 
-                     'score_differential', 'posteam_timeouts_remaining', 'defteam_timeouts_remaining']]
-    df_filtered["is_redzone"] = (df_filtered["yardline_100"] <= 20).astype(int)
-    df_filtered["is_goal_line"] = ((df_filtered["goal_to_go"] == 1) & (df_filtered["yardline_100"] <= 10)).astype(int)
-    df_filtered["is_short_yardage"] = ((df_filtered["ydstogo"] <= 2) & (df_filtered["down"] >= 3)).astype(int)
-    print(df_filtered.shape) # roughly 15k rows, 13 feature columns
-    print(X.head(10))
-
-    # target variable
-    y = df_filtered['yards_gained'].clip(-5, 20) # Clip extreme values (reduces noise from breakaway runs/big losses)
-    print(y.head(10))
-
+    
     # Intergrate the pbp_participation_file to get offense formation and personnel for each play
     pbp_participation_file = pd.read_csv("Data/pbp_participation_2024.csv")
     '''
@@ -62,12 +48,27 @@ def train_exp_yards_model_run():
         else:
             return np.nan, np.nan
     df_filtered["offense_formation"], df_filtered["offense_personnel"] = zip(*df_filtered.apply(get_participation_info, axis=1))
+    
+    # feature columns
+    X = df_filtered[['run_gap', 'run_location', 'posteam', 'defteam', 'elo_score', 'down', 'ydstogo', 'yardline_100', 
+                     'goal_to_go', 'quarter_seconds_remaining','half_seconds_remaining', 'game_seconds_remaining', 
+                     'score_differential', 'posteam_timeouts_remaining', 'defteam_timeouts_remaining',
+                     'offense_formation', 'offense_personnel']]
+    df_filtered["is_redzone"] = (df_filtered["yardline_100"] <= 20).astype(int)
+    df_filtered["is_goal_line"] = ((df_filtered["goal_to_go"] == 1) & (df_filtered["yardline_100"] <= 10)).astype(int)
+    df_filtered["is_short_yardage"] = ((df_filtered["ydstogo"] <= 2) & (df_filtered["down"] >= 3)).astype(int)
+    print(df_filtered.shape) # roughly 15k rows, 13 feature columns
+    print(X.head(10))
+
+    # target variable
+    y = df_filtered['yards_gained'].clip(-5, 20) # Clip extreme values (reduces noise from breakaway runs/big losses)
+    print(y.head(10))
 
     # Split the data between X and y
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # One-hot encode categorical columns for the X values (non-numeric data)
-    categorical_cols = ['posteam', 'defteam', 'run_gap', 'run_location']
+    categorical_cols = ['posteam', 'defteam', 'run_gap', 'run_location', 'offense_formation', 'offense_personnel']
     X_train_encoded = pd.get_dummies(X_train, columns=categorical_cols, drop_first=True) # Using pd.get_dummies (one-hot encoding)
     X_test_encoded = pd.get_dummies(X_test, columns=categorical_cols, drop_first=True)
     X_train_encoded, X_test_encoded = X_train_encoded.align(X_test_encoded, join='left', axis=1, fill_value=0) # Make sure train and test have same columns (important!)
@@ -111,15 +112,6 @@ def train_exp_yards_model_run():
     print("Expected yards model for running plays trained and saved successfully.")
 
 
-
-
-
-
-
-
-
-
-
 def predict_exp_yards_run(input_dict):
     ''' Predict expected yards for a running play '''
 
@@ -129,15 +121,18 @@ def predict_exp_yards_run(input_dict):
 
     # Prepare input data for prediction
     input_df = pd.DataFrame([input_dict])
+    
     # One-hot encode categorical columns
-    categorical_cols = ['posteam', 'defteam', 'run_gap', 'run_location']
+    categorical_cols = ['posteam', 'defteam', 'run_gap', 'run_location', 'offense_formation', 'offense_personnel']
     input_df_encoded = pd.get_dummies(input_df, columns=categorical_cols, drop_first=True)
+
     # Align with training data columns
     model_cols = model.feature_names_in_
     for col in model_cols:
         if col not in input_df_encoded.columns:
             input_df_encoded[col] = 0
     input_df_encoded = input_df_encoded.reindex(columns=model_cols, fill_value=0)
+
     # Make prediction
     prediction = model.predict(input_df_encoded)
     return prediction[0]
