@@ -71,6 +71,27 @@ ROUTE_CONCEPTS = {
 # while in others the companion is the INSIDE receiver.
 # We handle companion positioning in get_companion_position().
 
+# ---------------------------------------------------------------------------
+# BACKSIDE CONCEPTS
+# Maps frontside concept -> (backside_concept_name, backside_primary_route, 
+#                            backside_companion_route, backside_companion_pref, 
+#                            backside_primary_air, backside_companion_air)
+# ---------------------------------------------------------------------------
+BACKSIDE_CONCEPTS = {
+    'FLOAT':        ('Y CROSS',  'CROSS', 'DIG',    'outside', 10, 10),
+    'FLANK':        ('FLOAT',    'GO',    'OUT',    'inside',  14, 5),
+    'Y CROSS':      ('GHOST',    'OUT',   'GO',     'outside', 8,  14),
+    'SMASH':        ('DAGGER',   'IN',    'GO',     'inside',  10, 14),
+    'CURLS':        ('SCISSORS', 'CORNER','POST',   'outside', 12, 12),
+    'GHOST':        ('MILLS',    'POST',  'IN',     'inside',  14, 10),
+    'DAGGER':       ('SCISSORS', 'CORNER','POST',   'outside', 12, 12),
+    'DOUBLE SLANTS':('FLANK',    'FLAT',  'SLANT',  'inside',  2,  6),
+    'SCISSORS':     ('SLANT',    'SLANT', 'SLANT',  'outside', 6,  6),
+    'MILLS':        ('SMASH',    'HITCH', 'CORNER', 'inside',  5,  10),
+    'POST-WHEEL':   ('SMASH',    'HITCH', 'CORNER', 'inside',  5,  10),
+    'SLANT':        ('FLANK',    'FLAT',  'SLANT',  'inside',  2,  6),
+}
+
 
 # ---------------------------------------------------------------------------
 # FIELD DRAWING
@@ -237,20 +258,20 @@ def get_route_path(route_name, start_pos, position, location, air_yards):
         ROUTE_DEFINITIONS = {
             'GO':     lambda y: [(0, y*0.5), (0, y)],
             'FADE':   lambda y: [(1, y*0.5), (3, y)],
-            'OUT':    lambda y: [(0, y*0.8), (0, y), (10, y)],
-            'IN':     lambda y: [(0, y*0.75), (0, y*0.75), (-10, y*0.75)],
+            'OUT':    lambda y: [(0, y*0.8), (0, y), (5, y)],
+            'IN':     lambda y: [(0, y*0.75), (0, y*0.75), (-5, y*0.75)],
             'HITCH':  lambda y: [(0, y), (0, y-2)],
             'CURL':   lambda y: [(0, y), (0, y+2), (0, y), (-2, y)],
-            'SLANT':  lambda _: [(0, 3), (-7, 5)],
+            'SLANT':  lambda _: [(0, 3), (-3, 6)],
             'FLAT':   lambda _: [(3, 1), (5, 1)],
             'SCREEN': lambda _: [(-3, 0), (-5, -2)],
             'WHEEL':  lambda _: [(3, 1), (8, 3), (12, 8), (12, 12), (12, 16)],
             'CROSS':  lambda y: [(-2, y*0.2), (-6, y*0.5), (-11, y*0.8), (-15, y)],
             # New routes for concepts
-            'CORNER': lambda y: [(0, y*0.6), (0, y*0.55), (8, y)],
-            'POST':   lambda y: [(0, y*0.5), (0, y*0.5), (-8, y)],
-            'DIG':    lambda y: [(0, y*0.6), (0, y), (-10, y)],
-            'DRAG':   lambda _: [(0, 2), (-10, 4)],
+            'CORNER': lambda y: [(0, y*0.6), (0, y*0.85), (4, y)],
+            'POST':   lambda y: [(0, y*0.5), (0, y*0.75), (-4, y)],
+            'DIG':    lambda y: [(0, y*0.6), (0, y), (-6, y)],
+            'DRAG':   lambda _: [(0, 2), (-4, 4)],
         }
 
         route_func = ROUTE_DEFINITIONS.get(route_key, lambda y: [(0, y*0.5), (1, y)])
@@ -452,6 +473,14 @@ def visualize_play(play_data, save_path='play_visualization.png'):
     companion_start      = None
     third_receiver_start = None
     third_receiver_path  = []
+    
+    # Backside concept variables
+    backside_primary_start = None
+    backside_primary_path = []
+    backside_companion_start = None
+    backside_companion_path = []
+    backside_concept_name = None
+    backside_companion_is_te = False
 
     route   = play_data.get('route')
     run_gap = play_data.get('run_gap')
@@ -502,6 +531,48 @@ def visualize_play(play_data, save_path='play_visualization.png'):
             path_info_str = "Route: {} ({} yds) | Concept: {}".format(route_key, air_yards, concept_name)
         else:
             path_info_str = "Route: {} ({} yds)".format(route_key, air_yards)
+        
+        # --- Backside Concept Logic ---
+        # Add a complementary 2-route concept on the opposite side
+        if concept_name and concept_name in BACKSIDE_CONCEPTS:
+            backside_info = BACKSIDE_CONCEPTS[concept_name]
+            (backside_concept_name, backside_primary_route, backside_companion_route,
+             backside_companion_pref, backside_primary_air, backside_companion_air) = backside_info
+            
+            # Determine backside (opposite of frontside)
+            frontside = 'left' if start_pos[0] < 0 else 'right'
+            backside = 'right' if frontside == 'left' else 'left'
+            
+            # Create backside primary receiver
+            backside_primary_start = get_start_position(
+                'WR', backside, formation, route=backside_primary_route
+            )
+            backside_primary_path = get_route_path(
+                backside_primary_route, backside_primary_start, 'WR',
+                backside, backside_primary_air
+            )
+            
+            # Create backside companion receiver
+            backside_companion_start = get_companion_start_position(
+                backside_primary_start, backside, backside_companion_pref,
+                formation, companion_route=backside_companion_route
+            )
+            
+            # Check if backside companion should be a TE
+            pc_check_back = parse_personnel(personnel)
+            # Account for frontside TE usage
+            frontside_te_used = companion_is_te
+            has_te_for_backside = (pc_check_back.get('TE', 0) >= 2 if frontside_te_used 
+                                   else pc_check_back.get('TE', 0) >= 1)
+            
+            if has_te_for_backside and backside_companion_pref == 'inside':
+                backside_companion_is_te = True
+                backside_companion_start = (backside_companion_start[0], -1)
+            
+            backside_companion_path = get_route_path(
+                backside_companion_route, backside_companion_start, 'WR',
+                backside, backside_companion_air
+            )
 
     # ---- RUN PLAY ----
     elif pd.notna(run_gap):
@@ -554,7 +625,7 @@ def visualize_play(play_data, save_path='play_visualization.png'):
     if current_skill_count < 5:
         personnel_counts['WR'] = personnel_counts.get('WR', 0) + (5 - current_skill_count)
 
-    # Subtract primary and companion from background count
+    # Subtract frontside and backside receivers from background count
     if position in personnel_counts:
         personnel_counts[position] -= 1
     if companion_start is not None:
@@ -562,10 +633,23 @@ def visualize_play(play_data, save_path='play_visualization.png'):
             personnel_counts['TE'] = max(0, personnel_counts['TE'] - 1)
         elif 'WR' in personnel_counts:
             personnel_counts['WR'] = max(0, personnel_counts['WR'] - 1)
+    
+    # Subtract backside receivers
+    if backside_primary_start is not None and 'WR' in personnel_counts:
+        personnel_counts['WR'] = max(0, personnel_counts['WR'] - 1)
+    if backside_companion_start is not None:
+        if backside_companion_is_te and 'TE' in personnel_counts:
+            personnel_counts['TE'] = max(0, personnel_counts['TE'] - 1)
+        elif 'WR' in personnel_counts:
+            personnel_counts['WR'] = max(0, personnel_counts['WR'] - 1)
 
     occupied_slots = [start_pos]
     if companion_start is not None:
         occupied_slots.append(companion_start)
+    if backside_primary_start is not None:
+        occupied_slots.append(backside_primary_start)
+    if backside_companion_start is not None:
+        occupied_slots.append(backside_companion_start)
 
     # Determine concept side for pass plays to enforce max 2 receivers per side
     concept_side = None
@@ -605,6 +689,19 @@ def visualize_play(play_data, save_path='play_visualization.png'):
         ax.plot(cx, cy, 'o', color='#FF8C00', markersize=12,
                 label='Blocker / No Route')
 
+    # Draw backside concept receivers (PURPLE = primary, MAGENTA = companion)
+    if backside_primary_start is not None:
+        bx, by = backside_primary_start
+        ax.plot(bx, by, 'o', color='#9370DB', markersize=12,
+                label='Backside Primary ({})'.format(backside_concept_name))
+        _draw_route(ax, backside_primary_start, backside_primary_path, color='#9370DB', lw=3)
+    
+    if backside_companion_start is not None:
+        bcx, bcy = backside_companion_start
+        pos_type = 'TE' if backside_companion_is_te else 'WR'
+        ax.plot(bcx, bcy, 'o', color='#FF00FF', markersize=12,
+                label='Backside {} ({})'.format(pos_type, backside_concept_name))
+        _draw_route(ax, backside_companion_start, backside_companion_path, color='#FF00FF', lw=3)
 
     # Title
     title_text = (
