@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TeamDropdownMenu from '../../components/team_dropdown';
 import './situation.css';
@@ -65,13 +65,14 @@ export async function calculateGameSeconds(qtr, minutes, seconds) {
 
 const Situation = () => {
     const navigate = useNavigate();
-    
+    const secondsInputRef = useRef(null);
     // Team attributes
     const [offenseTeam, setOffenseTeam] = useState("");
     const [defenseTeam, setDefenseTeam] = useState("");
     
     // Team selector modal state
     const [showTeamSelector, setShowTeamSelector] = useState(false);
+    const [teamSearchQuery, setTeamSearchQuery] = useState('');
     const [selectorType, setSelectorType] = useState(''); // 'offense' or 'defense'
 
     // Down and distance attributes
@@ -168,7 +169,25 @@ const Situation = () => {
         'TEN': { primary: '#002244', secondary: '#4b92db' },
         'WAS': { primary: '#5a1414', secondary: '#ffbc12' }
     };
-    
+    // Function to handle clicking on the visual field
+    const handleFieldClick = (e) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const percentage = Math.round((clickX / rect.width) * 100);
+        
+        if (percentage === 50) {
+            setOwnOppMidfield('midfield');
+            setYdLine50('50');
+        } else if (percentage < 50) {
+            setOwnOppMidfield('own');
+            // Ensure it doesn't go below 1
+            setYdLine50(Math.max(1, percentage).toString());
+        } else {
+            setOwnOppMidfield('opp');
+            // Convert from 51-99 range back to 49-1 range
+            setYdLine50(Math.max(1, 100 - percentage).toString());
+        }
+    };
     // Get team logo by abbreviation
     const getTeamLogo = (abbr) => {
         const team = teams.find(t => t.abbr === abbr);
@@ -227,6 +246,7 @@ const Situation = () => {
     // Open team selector
     const openTeamSelector = (type) => {
         setSelectorType(type);
+        setTeamSearchQuery(''); // Clear out any old searches
         setShowTeamSelector(true);
     };
     
@@ -238,6 +258,7 @@ const Situation = () => {
             setDefenseTeam(abbr);
         }
         setShowTeamSelector(false);
+        setTeamSearchQuery(''); // Clear the search when done
     };
     
     // Calculate ball marker position (0-100%) based on field position
@@ -292,7 +313,7 @@ const Situation = () => {
         console.log(`Situation Array: ${situationArray}`);
 
         // Call the Flask endpoint to submit the situation and get play visualization
-        await fetch(`http://localhost:5000/suggestPlay/${situationArray}`, { method: 'GET' })
+        await fetch(`https://glowing-giggle-6954gr9qpw9p34wwv-5000.app.github.dev/suggestPlay/${situationArray}`, { method: 'GET' })
             .then(response => response.text())
             .then(data => {
                 console.log("Response from Flask endpoint:", data);
@@ -398,19 +419,20 @@ const Situation = () => {
                     {/* Down & Yards to Go */}
                     <div className="situation-row">
                         <span className="situation-label" style={{ fontSize: '25px', margin: '0 10px' }}>DOWN</span>
-                        <select
-                            className="situation-input"
-                            value={down}
-                            onChange={(e) => setDown(e.target.value)}
-                            style={{ width: '80px' }}
-                        >
-                            <option value="">-</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                        </select>
-                        
+                            <div className="quick-btn-group">
+                                {['1', '2', '3', '4'].map((d) => (
+                                    <button
+                                        key={d}
+                                        type="button"
+                                        /* Added down-btn right next to quick-btn! */
+                                        className={`quick-btn down-btn ${down === d ? 'active' : ''}`}
+                                        onClick={() => setDown(d)}
+                                    >
+                                        {d}
+                                    </button>
+                                ))}
+                        </div>
+                                                
                         <span className="situation-label" style={{ fontSize: '35px', margin: '0 20px' }}>&</span>
                         
                         <span className="situation-label"  style={{ fontSize: '25px', margin: '0 10px' }}>YDS TO GO</span>
@@ -432,20 +454,21 @@ const Situation = () => {
                     
                     {/* Quarter & Time */}
                     <div className="situation-row">
-                        <span className="situation-label" style={{ fontSize: '25px', margin: '0 10px' }} >QTR</span>
-                        <select
-                            className="situation-input"
-                            value={quarter}
-                            onChange={(e) => setQuarter(e.target.value)}
-                            style={{ width: '80px' }}
-                        >
-                            <option value="">-</option>
-                            <option value="1">1</option>
-                            <option value="2">2</option>
-                            <option value="3">3</option>
-                            <option value="4">4</option>
-                            <option value="OT">OT</option>
-                        </select>
+                        <span className="situation-label" style={{ fontSize: '25px', margin: '0 10px' }}>QTR</span>
+                        
+                        {/* Quick-select buttons for Quarter */}
+                        <div className="quick-btn-group">
+                            {['1', '2', '3', '4', 'OT'].map((q) => (
+                                <button
+                                    key={q}
+                                    type="button"
+                                    className={`quick-btn qtr-btn ${quarter === q ? 'active' : ''}`}
+                                    onClick={() => setQuarter(q)}
+                                >
+                                    {q}
+                                </button>
+                            ))}
+                        </div>
                         
                         <div className="time-display" style={{ marginLeft: 'auto' }}>
                             <input
@@ -458,8 +481,11 @@ const Situation = () => {
                                     const value = parseInt(e.target.value);
                                     if ((value >= 0 && value <= 15) || e.target.value === '') {
                                         setMinutes(e.target.value);
-                                        if (value === 15) {
-                                            setSeconds(0);
+                                        
+                                        // NEW: Auto-advance to seconds if 2 digits are typed or if they type 15!
+                                        if (e.target.value.length >= 2 || value === 15) {
+                                            if (value === 15) setSeconds(0);
+                                            if (secondsInputRef.current) secondsInputRef.current.focus();
                                         }
                                     }
                                 }}
@@ -469,11 +495,13 @@ const Situation = () => {
                             <span style={{ fontSize: '48px' }}>:</span>
                             <input
                                 type="number"
+                                ref={secondsInputRef} /* Attached the ref here for auto-focusing */
                                 className="situation-input"
                                 min="0"
                                 max="59"
                                 value={seconds === '' || seconds === undefined ? '' : seconds}
                                 onChange={(e) => {
+                                    // ... your existing seconds logic remains exactly the same
                                     const value = parseInt(e.target.value);
                                     if (parseInt(minutes) === 15) {
                                         setSeconds(0);
@@ -557,15 +585,19 @@ const Situation = () => {
             {/* Field Container */}
             <div className="field-container">
                 <h2 className="card-title" style={{ marginBottom: '10px' }}>FIELD POSITION</h2>
-                <div className="field" style={{
-                    background: `linear-gradient(90deg, 
-                        ${offenseTeam ? teamColors[offenseTeam]?.primary + '40' : 'rgba(90, 143, 58, 0.3)'} 0%, 
-                        ${offenseTeam ? teamColors[offenseTeam]?.primary + '40' : 'rgba(90, 143, 58, 0.3)'} 10%, 
-                        #5a8f3a 10%, 
-                        #4a7f2a 90%, 
-                        ${defenseTeam ? teamColors[defenseTeam]?.primary + '40' : 'rgba(74, 127, 42, 0.3)'} 90%, 
-                        ${defenseTeam ? teamColors[defenseTeam]?.primary + '40' : 'rgba(74, 127, 42, 0.3)'} 100%)`
-                }}>
+                <div 
+                    className="field" 
+                    onClick={handleFieldClick}
+                    style={{
+                        cursor: 'pointer', /* Shows the clickable hand icon */
+                        background: `linear-gradient(90deg, 
+                            ${offenseTeam ? teamColors[offenseTeam]?.primary + '40' : 'rgba(90, 143, 58, 0.3)'} 0%, 
+                            ${offenseTeam ? teamColors[offenseTeam]?.primary + '40' : 'rgba(90, 143, 58, 0.3)'} 10%, 
+                            #5a8f3a 10%, 
+                            #4a7f2a 90%, 
+                            ${defenseTeam ? teamColors[defenseTeam]?.primary + '40' : 'rgba(74, 127, 42, 0.3)'} 90%, 
+                            ${defenseTeam ? teamColors[defenseTeam]?.primary + '40' : 'rgba(74, 127, 42, 0.3)'} 100%)`
+                    }}>
                     <div className="field-lines">
                         <span>0</span>
                         <span>10</span>
@@ -592,22 +624,34 @@ const Situation = () => {
                 </div>
                 <div className="yard-line-display">
                     {/* Territory selector */}
-                    <select
-                        className="situation-input"
-                        value={ownOppMidfield}
-                        onChange={(e) => {
-                            setOwnOppMidfield(e.target.value);
-                            if (e.target.value === 'midfield') {
-                                setYdLine50('50');
-                            }
-                        }}
-                        style={{ width: 'auto', minWidth: '100px' }}
-                    >
-                        <option value="">-</option>
-                        <option value="own">OWN</option>
-                        <option value="opp">OPP</option>
-                        <option value="midfield">MID</option>
-                    </select>
+                    <div className="quick-btn-group">
+                        <button 
+                            type="button" 
+                            className={`quick-btn terr-btn ${ownOppMidfield === 'own' ? 'active' : ''}`} 
+                            onClick={() => setOwnOppMidfield('own')}
+                        >
+                            OWN
+                        </button>
+                        
+                        <button 
+                            type="button" 
+                            className={`quick-btn terr-btn ${ownOppMidfield === 'midfield' ? 'active' : ''}`} 
+                            onClick={() => { 
+                                setOwnOppMidfield('midfield'); 
+                                setYdLine50('50'); 
+                            }}
+                        >
+                            MID
+                        </button>
+                        
+                        <button 
+                            type="button" 
+                            className={`quick-btn terr-btn ${ownOppMidfield === 'opp' ? 'active' : ''}`} 
+                            onClick={() => setOwnOppMidfield('opp')}
+                        >
+                            OPP
+                        </button>
+                    </div>
                     
                     {/* Yard line input */}
                     <input
@@ -659,8 +703,22 @@ const Situation = () => {
                 <div className="team-selector-overlay" onClick={() => setShowTeamSelector(false)}>
                     <div className="team-selector-modal" onClick={(e) => e.stopPropagation()}>
                         <h2 className="team-selector-title">SELECT TEAM</h2>
+                        
+                        {/* The Search Input */}
+                        <input 
+                            type="text" 
+                            className="team-search-input"
+                            placeholder="Type team abbreviation (e.g., BUF)..."
+                            value={teamSearchQuery}
+                            onChange={(e) => setTeamSearchQuery(e.target.value)}
+                            autoFocus /* Automatically puts the cursor here so they can start typing instantly */
+                        />
+
                         <div className="team-grid">
-                            {teams.map((team) => (
+                            {/*Filter teams before mapping them */}
+                            {teams
+                                .filter(team => team.abbr.toLowerCase().includes(teamSearchQuery.toLowerCase()))
+                                .map((team) => (
                                 <div 
                                     key={team.abbr}
                                     className="team-option"
@@ -670,11 +728,11 @@ const Situation = () => {
                                     <span className="team-option-abbr">{team.abbr}</span>
                                 </div>
                             ))}
-                        </div>
-                        <button className="close-modal-btn" onClick={() => setShowTeamSelector(false)}>✕</button>
-                    </div>
-                </div>
-            )}
+            </div>
+            <button type="button" className="close-modal-btn" onClick={() => setShowTeamSelector(false)}>✕</button>
+        </div>
+    </div>
+)}
         </div>
     );
 }

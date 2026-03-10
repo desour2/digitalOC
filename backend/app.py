@@ -147,10 +147,16 @@ def suggest_play(situation):
     return "Success"
 
 
+app = Flask(__name__)
+CORS(app)  # CORS wrapping for domains
+
+@app.route("/", methods=['GET'])
+def home():
+    return "<h1>Server is working</h1><p>"
+
 @app.route("/playVisualization", methods=['GET'])
 def get_play_visualization():
     return send_file('play_visualization.png', mimetype='image/png')
 
-
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)

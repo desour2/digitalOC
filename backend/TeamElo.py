@@ -1,11 +1,15 @@
+import os
 import pandas as pd
 import numpy as np
 import nflreadpy as nfl
 
 
-#pd.read_csv("data/pbp_participation_2024.csv")
-df0 = pd.read_csv("data/pbp_2020_0.csv", low_memory=False)
-df1 = pd.read_csv("data/pbp_2020_1.csv", low_memory=False)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+
+# Load data using the constructed paths
+df0 = pd.read_csv(os.path.join(DATA_DIR, "pbp_2020_0.csv"), low_memory=False)
+df1 = pd.read_csv(os.path.join(DATA_DIR, "pbp_2020_1.csv"), low_memory=False)
 
 merged = pd.concat([df0, df1], ignore_index=True)
 
