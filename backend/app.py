@@ -168,9 +168,6 @@ def suggest_play(situation):
     return exp_yards
 
 
-app = Flask(__name__)
-CORS(app)  # CORS wrapping for domains
-
 @app.route("/", methods=['GET'])
 def home():
     return "<h1>Server is working</h1><p>"
