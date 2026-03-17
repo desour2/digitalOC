@@ -312,15 +312,15 @@ const Situation = () => {
         const situationArray = `${down}, ${ydsToGo}, ${ydLine100}, ${goalToGo}, ${qtrSeconds}, ${halfSeconds}, ${gameSeconds}, ${scoreDiff}, ${finalOffenseTimeouts}, ${finalDefenseTimeouts}, ${offenseTeam}, ${defenseTeam}`;
         console.log(`Situation Array: ${situationArray}`);
 
-        // Call the Flask endpoint to submit the situation and get play visualization
-        await fetch(`https://glowing-giggle-6954gr9qpw9p34wwv-5000.app.github.dev/suggestPlay/${situationArray}`, { method: 'GET' })
-            .then(response => response.text())
-            .then(data => {
-                console.log("Response from Flask endpoint:", data);
-            })
-            .catch(error => {
-                console.error("Error calling Flask endpoint:", error);
-            });
+        // Call the Flask endpoint to submit the situation and get expected yards and play visualization
+        let expYards = null;
+        try {
+            const response = await fetch(`http://localhost:5000/suggestPlay/${situationArray}`, { method: 'GET' });
+            expYards = await response.text();
+            console.log("Expected Yards:", expYards);
+        } catch (error) {
+            console.error("Error calling Flask endpoint:", error);
+        }
 
         // Navigate to result page with situation data and show the play visualization
         navigate('/result', { 
@@ -338,7 +338,8 @@ const Situation = () => {
                 minutes,
                 seconds,
                 offenseTimeouts: finalOffenseTimeouts,
-                defenseTimeouts: finalDefenseTimeouts
+                defenseTimeouts: finalDefenseTimeouts,
+                expYards
             } 
         });
 

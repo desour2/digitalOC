@@ -822,11 +822,10 @@ if __name__ == "__main__":
             "route": "WHEEL", "involved_player_position": "WR"
         },
     ]
-'''
+
     for i, play in enumerate(test_plays):
         out = f'concept_{i+1}_{play["route"].lower()}.png'
         print(f"\n=== Play {i+1}: {play['route']} ===")
         visualize_play(play, save_path=out)
         print(f"  > Saved: {out}")
-        '''
 

@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from pbp_situation_model import predict_play
 from run_model import predict_run_metrics
 from pass_model import predict_pass_metrics
+from exp_run_yards_model import predict_exp_yards_run
+from exp_pass_yards_model import predict_exp_yards_pass
 from routeDrawer.playDraw import visualize_play
 
 import joblib
@@ -64,6 +66,10 @@ def suggest_play(situation):
 
     # 1 = Pass Intent (Passes, Sacks, Scrambles), 0 = Run Intent
     prediction = 'pass' if prediction_int == 1 else 'run'
+    
+    # Depending on the prediction, feed it into the run or pass model, 
+    # then create a play visualization and return expected yards for the suggested play
+    exp_yards = None
 
     # Depending on the prediction, feed it into the run or pass model
     if prediction == 'run':
@@ -97,12 +103,17 @@ def suggest_play(situation):
             "offense_formation": offense_formation,
             "offense_personnel": personnel_rb_wr_te,
             "route": None,
-            "involved_player_position": "RB"
+            "involved_player_position": "RB",
+            "posteam": situation[10],
+            "defteam": situation[11]
         }
 
         # Play visualization will be saved to play_visualization.png
         visualize_play(run_play_input)
 
+        # Return expected yards for the suggested run play
+        exp_yards = str(predict_exp_yards_run(run_play_input).round(2))
+        print(f"Expected Yards for Suggested Run Play: {exp_yards}")
 
     elif prediction == 'pass':
         pass_prediction = predict_pass_metrics(situation, trained_models=pass_models)
@@ -135,16 +146,26 @@ def suggest_play(situation):
             "offense_formation": offense_formation,
             "offense_personnel": offense_personnel,
             "route": route,
-            "involved_player_position": receiver_position
+            "involved_player_position": receiver_position,
+            "posteam": situation[10],
+            "defteam": situation[11]
         }
 
         # Play visualization will be saved to play_visualization.png
         visualize_play(pass_play_input)
 
+        # Get the percent of a completed pass and expected yards (if complete) for the passing play
+        p_complete_and_exp_yards = predict_exp_yards_pass(pass_play_input)
+        print(f"Percentage complete and expected yards: {p_complete_and_exp_yards}")
+
+        # Return expected yards for the suggested pass play
+        exp_yards = f"{p_complete_and_exp_yards[0].round(2)}\n% will be complete: {(p_complete_and_exp_yards[1]*100).round(0)}"
+        print(f"Expected Yards for Suggested Pass Play: {exp_yards}")
+
     else:
         print("Unknown play type prediction.")
 
-    return "Success"
+    return exp_yards
 
 
 @app.route("/", methods=['GET'])

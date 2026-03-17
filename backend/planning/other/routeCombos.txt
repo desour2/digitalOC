@@ -1,0 +1,80 @@
+#['GO' 'FLAT' 'CROSS' 'HITCH' 'SCREEN' 'OUT' 'IN' 'SLANT' 'CORNER' 'ANGLE' 'POST' 'WHEEL']
+
+Go: assume outside receiver is running Go route, inside can run a short out (FLOAT)
+Flat: assume inside receiver is running flat route, outside receiver can run slant (FLANK)
+Cross: assume inside receiver is running Crosser, outside receiver can run dig (Y CROSS)
+Hitch: assume outside receiver is running hitch, inside receiver can run corner (SMASH)
+       if farther than 8 yards, inside receiver run hitch too (CURLS)
+Screen: assume outside receiver is running screen, inside receiver can block [do nothing?]
+Out: assume inside receiver is running out, outside receiver can run go (GHOST)
+In: assume outside receiver is running in, if it is beyond 8 yards, inside receiver run drag (DRIVE)
+                                           if shorter than 8 yards, inside receiver run slant (SLANT)
+Slant: DOUBLE SLANTS (both receivers run a slant)
+Corner: SCISSORS (outside receiver runs a post, inside receiver runs a corner)
+Post: MILLS (outside receiver runs a post, inside receiver runs an in)
+Wheel: POST-WHEEL (outside receiver runs a post, inside receiver runs a wheel)
+
+concept combos:
+if main concept is:
+
+Y Cross:
+- SMASH
+- GHOST
+- FLOAT
+
+Smash:
+- Y Cross
+- Slant/FLANK
+- DRIVE
+
+
+
+route concepts by distance of targeted route:
+IN:
+- <=7yds -> Slant (outside receiver runs in, inside receiver runs slant)
+- 8-14yds -> Drive (inside receiver runs in, outside receiver runs drag)
+- >14yds -> Dagger (outside receiver runs in, inside receiver runs go)
+
+OUT:
+- <=7yds -> Float (inside receiver runs out, outside receiver runs go)
+- >7yds -> Pot (Post-out, inside receiver runs out, outside receiver runs post)
+
+HITCH:
+- <=7yds -> Smash (outside receiver runs hitch, inside receiver runs corner)
+- >7yds -> Curls (both inside and outside receivers run hitches)
+
+GO:
+- Verticals (both inside and outside receivers run go routes)
+
+CORNER:
+- <=13yds -> Smash (inside receiver runs corner, outside receiver runs hitch)
+- >13yds -> Scissors (inside receiver runs corner, outside receiver runs post)
+
+POST:
+- 
+
+changes that need to be made for each concept:
+- FLANK: flat is targeted route, but needs to be lined up in the slot
+- Y Cross: Slot is targeted route, but needs to be lined up in the slot
+- Ghost: Out is targeted route, but needs to be lined up in the slot
+- Drive: In is targeted route, but needs to be lined up in the slot
+- Double Slants: Slot receiver needs to be lined up in the slot
+- Post-Wheel: Wheel is targeted route, but needs to be lined up in the slot
+- Mills: Post is targeted route, complimentary In route should break when Post breaks (In should stop running vertically when Post stops running vertically)
+- Smash: Hitch is targeted route, complimentary corner route needs to run vertically more before breaking.
+
+
+complimentary concepts:
+[targeted concept] [complimentary concept]
+[      float     ] [        Y Cross      ]
+[      FLANK     ] [        Float        ]
+[     Y Cross    ] [        Ghost        ]
+[      Smash     ] [        Dagger       ]
+[      Curls     ] [        Scissors     ]
+[      Ghost     ] [        Mills        ]
+[     Dagger     ] [        Scissors     ]
+[      Slants    ] [        Flank        ]
+[     Scissors   ] [        Slant        ]
+[      Mills     ] [        Smash        ]
+[    Post-Wheel  ] [        Smash        ]
+[      Slant     ] [        Flank        ]

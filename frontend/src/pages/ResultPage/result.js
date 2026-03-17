@@ -24,7 +24,8 @@ const Result = () => {
         minutes: situationData?.minutes || '',
         seconds: situationData?.seconds || '',
         offenseTimeouts: situationData?.offenseTimeouts || '',
-        defenseTimeouts: situationData?.defenseTimeouts || ''
+        defenseTimeouts: situationData?.defenseTimeouts || '',
+        expYards: situationData?.expYards || ''
     });
 
     const handleInputChange = (field, value) => {
@@ -61,24 +62,27 @@ const Result = () => {
             editableData.offenseTeam, editableData.defenseTeam
         ].join(',');
 
-        // First, send the updated situation to the backend to generate new visualization
-        fetch(`http://localhost:5000/suggestPlay/${updatedSituationArray}`, { method: 'GET' })
-            .then(response => {
-                if (response.ok) {
-                    // After the backend generates the new visualization, fetch it
-                    return fetch('http://localhost:5000/playVisualization', { method: 'GET' });
-                }
-                throw new Error('Failed to generate play suggestion');
-            })
-            .then(response => response.blob())
-            .then(imageBlob => {
-                // Update the visualization image
-                const imageObjectURL = URL.createObjectURL(imageBlob);
-                setVisualizationImage(imageObjectURL);
-            })
-            .catch(error => {
-                console.error("Error updating play visualization:", error);
-            });
+        // First, send the updated situation to the backend to generate new visualization and expected yards
+        let newExpYards = null;
+        try {
+            const response = await fetch(`http://localhost:5000/suggestPlay/${updatedSituationArray}`, { method: 'GET' });
+            newExpYards = await response.text();
+            console.log("Expected Yards:", newExpYards);
+
+            // After the backend generates the new visualization, fetch it
+            const vizResponse = await fetch('http://localhost:5000/playVisualization', { method: 'GET' });
+            const imageBlob = await vizResponse.blob();
+            const imageObjectURL = URL.createObjectURL(imageBlob);
+            setVisualizationImage(imageObjectURL);
+        } catch (error) {
+            console.error("Error updating play visualization:", error);
+        }
+
+        // Update local editable data with new expected yards
+        setEditableData(prev => ({
+            ...prev,
+            expYards: newExpYards
+        }));
 
         // Update the situationData display
         navigate('/result', {
@@ -296,6 +300,8 @@ const Result = () => {
                     <div className="visualization-container">
                         <h2>Play Visualization:</h2>
                         <img src={visualizationImage} alt="Play Visualization" className="visualization-image" />
+                        <br />
+                        <h2>Expected Yards: {editableData.expYards}</h2>
                     </div>
                 </div>
             </div>
