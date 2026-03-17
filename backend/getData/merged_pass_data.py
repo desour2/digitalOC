@@ -3,7 +3,7 @@ import glob
 import pandas as pd
 from typing import List
 
-DATA_DIR = "Data"
+DATA_DIR = "../data"
 
 # relevant pbp columns for pass model
 PBP_COLS = [

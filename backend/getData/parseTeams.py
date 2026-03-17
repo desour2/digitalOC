@@ -136,8 +136,8 @@ def add_personnel_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-    pbp: pd.DataFrame = pd.read_csv("data/pbp_2024_0.csv")
-    part: pd.DataFrame = pd.read_csv("data/pbp_participation_2024.csv")
+    pbp: pd.DataFrame = pd.read_csv("../data/pbp_2024_0.csv")
+    part: pd.DataFrame = pd.read_csv("../data/pbp_participation_2024.csv")
 
     key_cols = ["old_game_id", "play_id"]
     keep_cols = key_cols + [

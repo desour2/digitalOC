@@ -7,8 +7,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 
 
-PBP_PATH: str = "Data/pbp_2024_0.csv"
-PART_PATH: str = "Data/pbp_participation_2024.csv"
+PBP_PATH: str = "../data/pbp_2024_0.csv"
+PART_PATH: str = "../data/pbp_participation_2024.csv"
 
 
 def train_model_with_personnel(df_merged: pd.DataFrame) -> Tuple[RandomForestClassifier, List[str]]:

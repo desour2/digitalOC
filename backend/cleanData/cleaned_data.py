@@ -2,7 +2,7 @@ import pandas as pd
 import os
 
 # Path to the file you want to modify
-FILE_PATH = "data/pbp_2023_0.csv"
+FILE_PATH = "../data/pbp_2023_0.csv"
 
 # Columns you want to DELETE
 DELETE_COLUMNS = [

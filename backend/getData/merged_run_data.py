@@ -70,10 +70,10 @@ def load_and_process_files(file_pattern: str, required_columns: list) -> pd.Data
 def main_func(modyear, year):
 
     # Using glob patterns to find files.
-    filepath = f'data/pbp_{modyear}.csv'
-    participation_filepath = f'data/pbp_participation_{year}.csv'
+    filepath = f'../data/pbp_{modyear}.csv'
+    participation_filepath = f'../data/pbp_participation_{year}.csv'
     # output file
-    output_file = f'data/merged_rush_model_data_{modyear}.csv'
+    output_file = f'../data/merged_rush_model_data_{modyear}.csv'
 
     plays_df = load_and_process_files(filepath, PLAYS_COLUMNS)
 
