@@ -7,14 +7,26 @@ from sklearn.metrics import mean_squared_error, r2_score, accuracy_score, classi
 import joblib
 import json
 from pathlib import Path
-from TeamElo import PlayClassifier, team_elos
+try:
+    from .TeamElo import PlayClassifier, team_elos
+except ImportError:
+    from TeamElo import PlayClassifier, team_elos
+
+
+BASE_DIR = Path(__file__).resolve().parent
+BACKEND_DIR = BASE_DIR.parent
+DATA_DIR = BACKEND_DIR / "data"
+MODEL_DIR = BACKEND_DIR / "models"
 
 
 def train_exp_yards_model_run():
     ''' This regression model predicts expected yardage for running plays '''
 
     # Open both 2024 Play-by-Play CSV files and combine them
-    pbp_files = [pd.read_csv("Data/pbp_2024_0.csv"), pd.read_csv("Data/pbp_2024_1.csv")]
+    pbp_files = [
+        pd.read_csv(DATA_DIR / "pbp_2024_0.csv"),
+        pd.read_csv(DATA_DIR / "pbp_2024_1.csv")
+    ]
     df = pd.concat(pbp_files, ignore_index=True)
     print(df.columns.to_list())
     print(df.head())
@@ -32,7 +44,7 @@ def train_exp_yards_model_run():
     df_filtered["elo_score"] = df_filtered.apply(get_elo, axis=1)
     
     # Intergrate the pbp_participation_file to get offense formation and personnel for each play
-    pbp_participation_file = pd.read_csv("Data/pbp_participation_2024.csv")
+    pbp_participation_file = pd.read_csv(DATA_DIR / "pbp_participation_2024.csv")
     '''
         Find the row in the pbp_participation_file where the "nflverse_game_id" and "play_id" match the 
         row with "game_id" and "play_id" in df_filtered
@@ -106,18 +118,15 @@ def train_exp_yards_model_run():
         print(f"Predicted: {y_pred[i]:.2f}, Actual: {y_test_clean.iloc[i]}")
 
     # Save the model
-    model_dir = Path("models")  
-    model_dir.mkdir(exist_ok=True)
-    joblib.dump(model, model_dir / "exp_yards_model_run.joblib")
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    joblib.dump(model, MODEL_DIR / "exp_yards_model_run.joblib")
     print("Expected yards model for running plays trained and saved successfully.")
 
 
 def predict_exp_yards_run(input_dict):
     ''' Predict expected yards for a running play '''
 
-    model_dir = Path("models")  
-    model_dir.mkdir(exist_ok=True)
-    model = joblib.load(model_dir / "exp_yards_model_run.joblib")
+    model = joblib.load(MODEL_DIR / "exp_yards_model_run.joblib")
 
     # Prepare input data for prediction
     input_df = pd.DataFrame([input_dict])

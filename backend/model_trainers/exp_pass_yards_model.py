@@ -7,7 +7,16 @@ from sklearn.metrics import mean_squared_error, r2_score, accuracy_score, classi
 import joblib
 import json
 from pathlib import Path
-from TeamElo import PlayClassifier, team_elos
+try:
+    from .TeamElo import PlayClassifier, team_elos
+except ImportError:
+    from TeamElo import PlayClassifier, team_elos
+
+
+BASE_DIR = Path(__file__).resolve().parent
+BACKEND_DIR = BASE_DIR.parent
+DATA_DIR = BACKEND_DIR / "data"
+MODEL_DIR = BACKEND_DIR / "models"
 
 
 def train_exp_yards_model_pass():
@@ -19,7 +28,10 @@ def train_exp_yards_model_pass():
     '''
 
     # Open both 2024 Play-by-Play CSV files and combine them
-    pbp_files = [pd.read_csv("Data/pbp_2024_0.csv"), pd.read_csv("Data/pbp_2024_1.csv")]
+    pbp_files = [
+        pd.read_csv(DATA_DIR / "pbp_2024_0.csv"),
+        pd.read_csv(DATA_DIR / "pbp_2024_1.csv")
+    ]
     df = pd.concat(pbp_files, ignore_index=True)
 
     # Filter columns that only contain "pass" for play_type
@@ -34,7 +46,7 @@ def train_exp_yards_model_pass():
     df_filtered["elo_score"] = df_filtered.apply(get_elo, axis=1)
 
     # Intergrate the pbp_participation_file to get offense formation and personnel for each play
-    pbp_participation_file = pd.read_csv("Data/pbp_participation_2024.csv")
+    pbp_participation_file = pd.read_csv(DATA_DIR / "pbp_participation_2024.csv")
     def get_participation_info(row):
         game_id = row["game_id"]
         play_id = row["play_id"]
@@ -177,10 +189,9 @@ def train_exp_yards_model_pass():
               f"Expected: {y_pred_combined[i]:.2f}, Actual: {y_test_actual.iloc[i]}")
 
     # Save both models
-    model_dir = Path("models")  
-    model_dir.mkdir(exist_ok=True)
-    joblib.dump(completion_model, model_dir / "completion_prob_model_pass.joblib")
-    joblib.dump(yards_model, model_dir / "exp_yards_if_complete_model_pass.joblib")
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    joblib.dump(completion_model, MODEL_DIR / "completion_prob_model_pass.joblib")
+    joblib.dump(yards_model, MODEL_DIR / "exp_yards_if_complete_model_pass.joblib")
     print("\nTwo-stage expected yards model for passing plays trained and saved successfully.")
 
 
@@ -188,9 +199,8 @@ def train_exp_yards_model_pass():
 def predict_exp_yards_pass(input_dict):
     ''' Predict expected yards for a passing play using the two-stage model '''
 
-    model_dir = Path("models")
-    completion_model = joblib.load(model_dir / "completion_prob_model_pass.joblib")
-    yards_model = joblib.load(model_dir / "exp_yards_if_complete_model_pass.joblib")
+    completion_model = joblib.load(MODEL_DIR / "completion_prob_model_pass.joblib")
+    yards_model = joblib.load(MODEL_DIR / "exp_yards_if_complete_model_pass.joblib")
 
     # Prepare input data
     input_df = pd.DataFrame([input_dict])

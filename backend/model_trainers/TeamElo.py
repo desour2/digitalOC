@@ -1,15 +1,19 @@
-import os
 import pandas as pd
 import numpy as np
 import nflreadpy as nfl
+from pathlib import Path
 
+BASE_DIR = Path(__file__).resolve().parent
+DATA_DIR = BASE_DIR.parent / "data"
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "data")
+if not DATA_DIR.exists():
+    raise FileNotFoundError(
+        f"Data directory not found at {DATA_DIR}. Expected backend/data after reorganization."
+    )
 
-# Load data using the constructed paths
-df0 = pd.read_csv(os.path.join(DATA_DIR, "pbp_2020_0.csv"), low_memory=False)
-df1 = pd.read_csv(os.path.join(DATA_DIR, "pbp_2020_1.csv"), low_memory=False)
+# Load data using the backend-level data directory
+df0 = pd.read_csv(DATA_DIR / "pbp_2020_0.csv", low_memory=False)
+df1 = pd.read_csv(DATA_DIR / "pbp_2020_1.csv", low_memory=False)
 
 merged = pd.concat([df0, df1], ignore_index=True)
 
@@ -376,8 +380,8 @@ for team in merged["posteam"].dropna().unique():
 
 elo_df = pd.DataFrame(team_elos).T  # Transpose so teams are rows
 
-# Save to CSV in the data directory
-elo_df.to_csv("data/team_elos_2020.csv", index_label="team")
+# Save to CSV in backend/data
+elo_df.to_csv(DATA_DIR / "team_elos_2020.csv", index_label="team")
 
 
 

@@ -10,12 +10,12 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 import joblib
 
-DATA_FILES = ["Data/merged_pass_model_data_2020.csv"]
-DATA_FILES.append("Data/merged_pass_model_data_2021.csv")
-DATA_FILES.append("Data/merged_pass_model_data_2022.csv")
-DATA_FILES.append("Data/merged_pass_model_data_2023.csv")
-DATA_FILES.append("Data/merged_pass_model_data_2024.csv")
-OUTPUT_DIR = Path("models")
+DATA_FILES = ["../data/merged_pass_model_data_2020.csv"]
+DATA_FILES.append("../data/merged_pass_model_data_2021.csv")
+DATA_FILES.append("../data/merged_pass_model_data_2022.csv")
+DATA_FILES.append("../data/merged_pass_model_data_2023.csv")
+DATA_FILES.append("../data/merged_pass_model_data_2024.csv")
+OUTPUT_DIR = Path("../models")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
 TARGETS = [
@@ -327,7 +327,7 @@ if __name__ == "__main__":
     model = train_pass_models()
 
     # Save the pass model to the models directory
-    model_dir = Path("models")
+    model_dir = Path("../models")
     model_dir.mkdir(exist_ok=True)
 
     model_path = model_dir / "pass_models.joblib"

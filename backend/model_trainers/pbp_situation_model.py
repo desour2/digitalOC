@@ -8,11 +8,14 @@ from sklearn.metrics import accuracy_score, classification_report
 import joblib
 import json
 from pathlib import Path
-from TeamElo import PlayClassifier, team_elos
+try:
+    from .TeamElo import PlayClassifier, team_elos
+except ImportError:
+    from TeamElo import PlayClassifier, team_elos
 
 
 def train_pbp_model():
-    pbp_files = [pd.read_csv("Data/pbp_2024_0.csv", low_memory=False), pd.read_csv("Data/pbp_2024_1.csv", low_memory=False)]
+    pbp_files = [pd.read_csv("../data/pbp_2024_0.csv", low_memory=False), pd.read_csv("../data/pbp_2024_1.csv", low_memory=False)]
     df = pd.concat(pbp_files, ignore_index=True).copy()
 
     df_filtered = df[df['play_type'].isin(['run', 'pass'])].copy()
@@ -121,7 +124,7 @@ if __name__ == "__main__":
     model, feature_columns = train_pbp_model()
 
     # Save the model and feature columns to the models directory
-    model_dir = Path("models")
+    model_dir = Path("../models")
     model_dir.mkdir(exist_ok=True)
     
     # Save the trained model using joblib

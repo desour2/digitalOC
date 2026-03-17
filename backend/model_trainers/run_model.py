@@ -1,19 +1,21 @@
 import pandas as pd
 import numpy as np
-
 from typing import Dict, Any, List
-
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
-
-from parse_personnel import add_personnel_features
-from add_participation_features import add_participation_features
-
 import joblib
 from pathlib import Path
+try:
+    from .parse_personnel import add_personnel_features
+except ImportError:
+    from parse_personnel import add_personnel_features
+try:
+    from .add_participation_features import add_participation_features
+except ImportError:
+    from add_participation_features import add_participation_features
 
 
 def train_run_models() -> Dict[str, Dict[str, Any]]:
@@ -25,12 +27,12 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
 
     try:
         pbp_files: List[pd.DataFrame] = [
-            pd.read_csv("data/pbp_2024_0.csv", low_memory=False),
-            pd.read_csv("data/pbp_2024_1.csv", low_memory=False),
+            pd.read_csv("../data/pbp_2024_0.csv", low_memory=False),
+            pd.read_csv("../data/pbp_2024_1.csv", low_memory=False),
         ]
         df: pd.DataFrame = pd.concat(pbp_files, ignore_index=True)
     except FileNotFoundError:
-        print("Error: Data files not found in 'Data/' directory. Exiting.")
+        print("Error: Data files not found in '../data/' directory. Exiting.")
         return {}
 
     # Filter for designed runs only
@@ -43,7 +45,7 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
 
     try:
         part_df: pd.DataFrame = pd.read_csv(
-            "data/pbp_participation_2024.csv",
+            "../data/pbp_participation_2024.csv",
             low_memory=False,
         )
     except FileNotFoundError:
@@ -255,7 +257,7 @@ if __name__ == "__main__":
     all_models: Dict[str, Dict[str, Any]] = train_run_models()
 
     # Save the trained run models to the models directory
-    model_dir = Path("models")
+    model_dir = Path("../models")
     model_dir.mkdir(exist_ok=True)
     model_path = model_dir / "run_models.joblib"
     joblib.dump(all_models, model_path)
