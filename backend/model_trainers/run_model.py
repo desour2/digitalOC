@@ -95,7 +95,10 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
         "posteam_timeouts_remaining", "defteam_timeouts_remaining", "posteam", "defteam", 
         "shotgun", "no_huddle", "roof", "surface", "temp", "wind",
         "is_redzone", "is_goal_line", "is_short_yardage", "is_two_minute_drill", "is_close_game_late",
-        "is_midfield_aggression", "is_deep_redzone"
+        "is_midfield_aggression", "is_deep_redzone",
+        # --- NEW SEQUENCE FEATURES ---
+        "prev_is_pass", "prev_is_run", "prev_yards_gained", 
+        "two_consecutive_runs", "two_consecutive_passes"
     ]
 
     personnel_numeric = ["off_rb", "off_te", "off_wr", "def_dl", "def_lb", "def_db", "defenders_in_box"]
@@ -165,9 +168,11 @@ def predict_run_metrics(situation, trained_models):
         based on the trained run models. 
     '''
     situation_df = pd.DataFrame([situation], columns=['down', 'ydstogo', 'yardline_100', 'goal_to_go', 'quarter_seconds_remaining',
-                                                      'half_seconds_remaining', 'game_seconds_remaining', 'score_differential', 
-                                                      'posteam_timeouts_remaining', 'defteam_timeouts_remaining', 'posteam', 'defteam', 
-                                                      'is_midfield_aggression', 'is_deep_redzone'])
+         'half_seconds_remaining', 'game_seconds_remaining', 'score_differential', 
+         'posteam_timeouts_remaining', 'defteam_timeouts_remaining', 'posteam', 'defteam',
+         'is_midfield_aggression', 'is_deep_redzone',
+         'prev_is_pass', 'prev_is_run', 'prev_yards_gained', 
+         'two_consecutive_runs', 'two_consecutive_passes', 'defense_coverage_type'])
     
     situation_df["is_redzone"] = (situation_df["yardline_100"] <= 20).astype(int)
     situation_df["is_goal_line"] = (

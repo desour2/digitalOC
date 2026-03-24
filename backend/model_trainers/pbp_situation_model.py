@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestClassifier
+from add_additional_pbp_features import add_additional_pbp_features
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report
 import joblib
@@ -17,7 +18,7 @@ except ImportError:
 def train_pbp_model():
     pbp_files = [pd.read_csv("../data/pbp_2024_0.csv", low_memory=False), pd.read_csv("../data/pbp_2024_1.csv", low_memory=False)]
     df = pd.concat(pbp_files, ignore_index=True).copy()
-
+    df = add_additional_pbp_features(df)
     df_filtered = df[df['play_type'].isin(['run', 'pass'])].copy()
 
     # Filtering garbage time
@@ -42,7 +43,10 @@ def train_pbp_model():
         'quarter_seconds_remaining', 'half_seconds_remaining', 
         'game_seconds_remaining', 'score_differential', 
         'posteam_timeouts_remaining', 'defteam_timeouts_remaining', 
-        'posteam', 'defteam', 'elo_score'
+        'posteam', 'defteam', 'elo_score',
+        # --- NEW SEQUENCE FEATURES ---
+        'prev_is_pass', 'prev_is_run', 'prev_yards_gained', 
+        'two_consecutive_runs', 'two_consecutive_passes'
     ]
     
     X = df_filtered[X_features]
@@ -96,8 +100,11 @@ def predict_play(situation, trained_model, feature_columns):
     print()
 
     situation_df = pd.DataFrame([situation], columns=['down', 'ydstogo', 'yardline_100', 'goal_to_go', 'quarter_seconds_remaining',
-                                                      'half_seconds_remaining', 'game_seconds_remaining', 'score_differential', 
-                                                      'posteam_timeouts_remaining', 'defteam_timeouts_remaining', 'posteam', 'defteam', 'is_midfield_aggression', 'is_deep_redzone'])
+         'half_seconds_remaining', 'game_seconds_remaining', 'score_differential', 
+         'posteam_timeouts_remaining', 'defteam_timeouts_remaining', 'posteam', 'defteam',
+         'is_midfield_aggression', 'is_deep_redzone',
+         'prev_is_pass', 'prev_is_run', 'prev_yards_gained', 
+         'two_consecutive_runs', 'two_consecutive_passes', 'defense_coverage_type'])
 
     categorical_cols = ['posteam', 'defteam']
     situation_encoded = pd.get_dummies(situation_df, columns=categorical_cols, drop_first=True)

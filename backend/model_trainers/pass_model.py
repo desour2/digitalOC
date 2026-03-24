@@ -111,10 +111,13 @@ def build_global_feature_set(df: pd.DataFrame) -> List[str]:
         "is_third_long", "is_third_short", "is_second_long", "is_first_down",
         "is_two_minute", "is_close_game_late", "is_blowout",
         "is_leading", "is_trailing", "score_margin_abs", "is_shotgun",
-        "is_empty", "is_heavy", "field_position", "is_midfield_aggression", "is_deep_redzone"
+        "is_empty", "is_heavy", "field_position", "is_midfield_aggression", "is_deep_redzone",
+        # --- NEW SEQUENCE FEATURES ---
+        "prev_is_pass", "prev_is_run", "prev_yards_gained", 
+        "two_consecutive_runs", "two_consecutive_passes"
     ]
     #include a few contextual cols if present
-    context = ["temp", "wind", "roof", "surface"]
+    context = ["temp", "wind", "roof", "surface", "defense_coverage_type"]
     possible = core + derived + context
     available = [c for c in possible if c in df.columns]
     print(f"Global feature set contains {len(available)} available columns")
@@ -291,9 +294,11 @@ def predict_pass_metrics(situation, trained_models):
 
     # Convert input to DataFrame with correct column names
     situation_df = pd.DataFrame([situation], columns=['down', 'ydstogo', 'yardline_100', 'goal_to_go', 'quarter_seconds_remaining',
-                                                      'half_seconds_remaining', 'game_seconds_remaining', 'score_differential', 
-                                                      'posteam_timeouts_remaining', 'defteam_timeouts_remaining', 'posteam', 'defteam',
-                                                      'is_midfield_aggression', 'is_deep_redzone'])
+         'half_seconds_remaining', 'game_seconds_remaining', 'score_differential', 
+         'posteam_timeouts_remaining', 'defteam_timeouts_remaining', 'posteam', 'defteam',
+         'is_midfield_aggression', 'is_deep_redzone',
+         'prev_is_pass', 'prev_is_run', 'prev_yards_gained', 
+         'two_consecutive_runs', 'two_consecutive_passes', 'defense_coverage_type'])
 
     # Add the football intelligence features
     situation_df = add_football_intelligence_features(situation_df)

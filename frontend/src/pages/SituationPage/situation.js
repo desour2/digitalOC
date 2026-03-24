@@ -94,6 +94,7 @@ const Situation = () => {
     // Timeout attributes
     const [offenseTimeouts, setOffenseTimeouts] = useState("0"); 
     const [defenseTimeouts, setDefenseTimeouts] = useState("0");
+    const [defenseCoverage, setDefenseCoverage] = useState("UNKNOWN");
 
     // Cycling tips state
     const [currentTipIndex, setCurrentTipIndex] = useState(0);
@@ -308,20 +309,40 @@ const Situation = () => {
         const halfSeconds = await calculateHalfSeconds(quarter, minutes, seconds);
         const gameSeconds = await calculateGameSeconds(quarter, minutes, seconds);
 
-        // Situation array that will be used to call the backend and PBP model
-        const situationArray = `${down}, ${ydsToGo}, ${ydLine100}, ${goalToGo}, ${qtrSeconds}, ${halfSeconds}, ${gameSeconds}, ${scoreDiff}, ${finalOffenseTimeouts}, ${finalDefenseTimeouts}, ${offenseTeam}, ${defenseTeam}`;
-        console.log(`Situation Array: ${situationArray}`);
+        // Create the JSON object expected by the backend model
+        const currentSituation = {
+            down: parseInt(down),
+            ydstogo: parseInt(ydsToGo),
+            yardline_100: ydLine100,
+            goal_to_go: goalToGo,
+            quarter_seconds_remaining: qtrSeconds,
+            half_seconds_remaining: halfSeconds,
+            game_seconds_remaining: gameSeconds,
+            score_differential: scoreDiff,
+            posteam_timeouts_remaining: parseInt(finalOffenseTimeouts),
+            defteam_timeouts_remaining: parseInt(finalDefenseTimeouts),
+            posteam: offenseTeam,
+            defteam: defenseTeam,
+            defense_coverage_type: defenseCoverage
+        };
 
-        // Call the Flask endpoint to submit the situation and get expected yards and play visualization
         let expYards = null;
         try {
-            const response = await fetch(`http://localhost:5000/suggestPlay/${situationArray}`, { method: 'GET' });
-            expYards = await response.text();
+            const response = await fetch('http://localhost:5000/suggestPlay', { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    current_situation: currentSituation,
+                    play_history: [] // Starts empty for the very first play of the scenario
+                })
+            });
+            const data = await response.json();
+            expYards = data.expected_yards;
             console.log("Expected Yards:", expYards);
         } catch (error) {
             console.error("Error calling Flask endpoint:", error);
         }
-
+        const situationArray = `${down}, ${ydsToGo}, ${ydLine100}, ${goalToGo}, ${qtrSeconds}, ${halfSeconds}, ${gameSeconds}, ${scoreDiff}, ${finalOffenseTimeouts}, ${finalDefenseTimeouts}, ${offenseTeam}, ${defenseTeam}`;
         // Navigate to result page with situation data and show the play visualization
         navigate('/result', { 
             state: { 
@@ -373,7 +394,25 @@ const Situation = () => {
                             <div style={{ fontSize: '24px', color: 'rgba(255,255,255,0.5)' }}>Select Team</div>
                         )}
                     </div>
-                    
+                    {/* Defensive Coverage Dropdown */}
+                    <div className="situation-row" style={{ marginTop: '15px', marginBottom: '15px' }}>
+                        <span className="situation-label" style={{ fontSize: '18px' }}>COVERAGE</span>
+                        <select 
+                            className="situation-input" 
+                            value={defenseCoverage}
+                            onChange={(e) => setDefenseCoverage(e.target.value)}
+                            style={{ width: '160px', fontSize: '16px' }}
+                        >
+                            <option value="UNKNOWN">Unknown</option>
+                            <option value="COVER_0">Cover 0 (Man)</option>
+                            <option value="COVER_1">Cover 1 (Man)</option>
+                            <option value="COVER_2">Cover 2 (Zone)</option>
+                            <option value="COVER_3">Cover 3 (Zone)</option>
+                            <option value="COVER_4">Cover 4 (Quarters)</option>
+                            <option value="COVER_6">Cover 6</option>
+                            <option value="2_MAN">2-Man</option>
+                        </select>
+                    </div>
                     {/* Points Display */}
                     <div className="points-display">
                         <input
