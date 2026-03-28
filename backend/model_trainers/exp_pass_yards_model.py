@@ -196,11 +196,8 @@ def train_exp_yards_model_pass():
 
 
 
-def predict_exp_yards_pass(input_dict):
+def predict_exp_yards_pass(input_dict, completion_model, yards_model):
     ''' Predict expected yards for a passing play using the two-stage model '''
-
-    completion_model = joblib.load(MODEL_DIR / "completion_prob_model_pass.joblib")
-    yards_model = joblib.load(MODEL_DIR / "exp_yards_if_complete_model_pass.joblib")
 
     # Prepare input data
     input_df = pd.DataFrame([input_dict])

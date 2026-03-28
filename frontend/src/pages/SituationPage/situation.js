@@ -300,6 +300,7 @@ const Situation = () => {
         console.log(`Score (offense - defense) is ${offensePoints} - ${defensePoints}`);
         console.log(`Timestamp: ${quarter}${quarter === '1' ? 'st' : quarter === '2' ? 'nd' : quarter === '3' ? 'rd' : quarter === '4' ? 'th' : ''} at ${minutes}:${seconds}`);
         console.log(`Timeouts remaining: Offense ${finalOffenseTimeouts}, Defense ${finalDefenseTimeouts}`);
+        console.log(`Defensive coverage: ${defenseCoverage}`);
         
         // Calculate necessary values for the situation array as needed by the backend model
         const ydLine100 = (ownOppMidfield === "own" ? 100 - parseInt(ydLine50) : ownOppMidfield === "midfield" ? 50 : ownOppMidfield === "opp" ? parseInt(ydLine50) : undefined);
@@ -327,6 +328,8 @@ const Situation = () => {
         };
 
         let expYards = null;
+        let playVisualization = null;
+
         try {
             const response = await fetch('http://localhost:5000/suggestPlay', { 
                 method: 'POST',
@@ -336,13 +339,18 @@ const Situation = () => {
                     play_history: [] // Starts empty for the very first play of the scenario
                 })
             });
+
             const data = await response.json();
             expYards = data.expected_yards;
+            playVisualization = data.play_visualization;
             console.log("Expected Yards:", expYards);
+            
         } catch (error) {
             console.error("Error calling Flask endpoint:", error);
         }
+
         const situationArray = `${down}, ${ydsToGo}, ${ydLine100}, ${goalToGo}, ${qtrSeconds}, ${halfSeconds}, ${gameSeconds}, ${scoreDiff}, ${finalOffenseTimeouts}, ${finalDefenseTimeouts}, ${offenseTeam}, ${defenseTeam}`;
+        
         // Navigate to result page with situation data and show the play visualization
         navigate('/result', { 
             state: { 
@@ -360,7 +368,8 @@ const Situation = () => {
                 seconds,
                 offenseTimeouts: finalOffenseTimeouts,
                 defenseTimeouts: finalDefenseTimeouts,
-                expYards
+                expYards,
+                playVisualization
             } 
         });
 
