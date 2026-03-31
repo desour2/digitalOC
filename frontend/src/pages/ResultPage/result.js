@@ -77,6 +77,8 @@ const Result = () => {
         };
 
         let newExpYards = null;
+        let newPlayVisualization = null;
+
         try {
             // POST to backend
             const response = await fetch('http://localhost:5000/suggestPlay', { 
@@ -87,13 +89,12 @@ const Result = () => {
                     play_history: updatedPlayHistory
                 })
             });
+
             const data = await response.json();
             newExpYards = data.expected_yards;
+            newPlayVisualization = data.play_visualization;
+            setVisualizationImage(`data:image/png;base64,${newPlayVisualization}`);
 
-            // Fetch visualization
-            const vizResponse = await fetch('http://localhost:5000/playVisualization', { method: 'GET' });
-            const imageBlob = await vizResponse.blob();
-            setVisualizationImage(URL.createObjectURL(imageBlob));
         } catch (error) {
             console.error("Error updating play visualization:", error);
         }
@@ -102,28 +103,18 @@ const Result = () => {
         setEditableData(prev => ({
             ...prev,
             expYards: newExpYards,
+            playVisualization: newPlayVisualization,
             playHistory: updatedPlayHistory
         }));
-
-        navigate('/result', {
-            state: { ...editableData, playHistory: updatedPlayHistory, ydLine100 }
-        }, { replace: true });
     };
 
     useEffect(() => {
         console.log("Received situation data:", situationData);
 
-        // Fetch the play visualization image from the Flask backend
-        fetch('http://localhost:5000/playVisualization', { method: 'GET' })
-            .then(response => response.blob())
-            .then(imageBlob => {
-                // Create a local URL of the image blob and set it as the visualization image source
-                const imageObjectURL = URL.createObjectURL(imageBlob);
-                setVisualizationImage(imageObjectURL);
-            })
-            .catch(error => {
-                console.error("Error fetching play visualization:", error);
-            });
+        // Set play visualization image when the page loads or when situationData changes
+        if (situationData?.playVisualization) {
+            setVisualizationImage(`data:image/png;base64,${situationData.playVisualization}`);
+        }
 
     }, [situationData]);
 

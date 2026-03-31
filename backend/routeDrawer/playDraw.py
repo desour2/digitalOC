@@ -31,6 +31,7 @@ Route Concepts:
     Wheel   → POST-WHEEL: outside=POST, inside=WHEEL
 '''
 
+import io
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -432,7 +433,7 @@ def _draw_route(ax, start_pos, path, color, lw=3):
 
 # MAIN VISUALIZATION
 
-def visualize_play(play_data, save_path='play_visualization.png'):
+def visualize_play(play_data):
     """
     Accepts a dictionary 'play_data' containing all necessary play variables.
     Pass plays now draw the full route concept (companion route alongside primary).
@@ -713,9 +714,15 @@ def visualize_play(play_data, save_path='play_visualization.png'):
               facecolor='#2A2A3E', edgecolor='white', labelcolor='white', fontsize=9)
 
     plt.tight_layout()
-    plt.savefig(save_path, dpi=150, bbox_inches='tight',
+
+    # Save visualization to a bytes buffer to display in frontend without needing to save to disk
+    buf = io.BytesIO()
+    plt.savefig(buf, format='png', dpi=150, bbox_inches='tight',
                 facecolor=fig.get_facecolor())
     plt.close()
+    buf.seek(0)
+
+    return buf
 
 
 # TEST CASES

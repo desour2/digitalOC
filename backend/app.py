@@ -1,5 +1,9 @@
-from flask import Flask, jsonify, send_file, request
+import base64
+from flask import Flask, jsonify, request
 from flask_cors import CORS
+import joblib
+from pathlib import Path
+import json
 import matplotlib
 matplotlib.use('Agg')  # Use non-interactive backend for Flask
 import matplotlib.pyplot as plt
@@ -11,24 +15,29 @@ from model_trainers.exp_run_yards_model import predict_exp_yards_run
 from model_trainers.exp_pass_yards_model import predict_exp_yards_pass
 from routeDrawer.playDraw import visualize_play
 
-import joblib
-from pathlib import Path
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}})
 
 
-# Load the PBP, run and pass models when the application starts
+# Load the PBP, run, pass, and expected yards models when the application starts
 model_dir = Path("models")
 model_dir.mkdir(exist_ok=True)
 pbp_model = joblib.load(model_dir / "pbp_situation_model.joblib")
 run_models = joblib.load(model_dir / "run_models.joblib")
 pass_models = joblib.load(model_dir / "pass_models.joblib")
+exp_run_yards_model = joblib.load(model_dir / "exp_yards_model_run.joblib")
+completion_prob_model_pass = joblib.load(model_dir / "completion_prob_model_pass.joblib")
+exp_yards_if_complete_model_pass = joblib.load(model_dir / "exp_yards_if_complete_model_pass.joblib")
 
-import json
 with open(model_dir / "pbp_situation_model_meta.json", 'r') as f:
     metadata = json.load(f)
 pbp_feature_columns = metadata["feature_columns"]
+
+
+@app.route("/", methods=['GET'])
+def home():
+    return "<h1>Server is working</h1><p>"
 
 
 @app.route("/suggestPlay", methods=['POST'])
@@ -102,6 +111,7 @@ def suggest_play():
     prediction = 'pass' if prediction_int == 1 else 'run'
     
     exp_yards = None
+    play_visualization = None
 
     # Depending on the prediction, feed it into the run or pass model
     if prediction == 'run':
@@ -133,8 +143,8 @@ def suggest_play():
             "defteam": situation[11]
         }
 
-        visualize_play(run_play_input)
-        exp_yards = str(predict_exp_yards_run(run_play_input).round(2))
+        exp_yards = str(predict_exp_yards_run(run_play_input, exp_run_yards_model).round(2))
+        play_visualization = visualize_play(run_play_input)
 
     elif prediction == 'pass':
         pass_prediction = predict_pass_metrics(situation, trained_models=pass_models)
@@ -164,19 +174,13 @@ def suggest_play():
             "defteam": situation[11]
         }
 
-        visualize_play(pass_play_input)
-        p_complete_and_exp_yards = predict_exp_yards_pass(pass_play_input)
+        p_complete_and_exp_yards = predict_exp_yards_pass(pass_play_input, completion_prob_model_pass, exp_yards_if_complete_model_pass)
         exp_yards = f"{p_complete_and_exp_yards[0].round(2)}\n% will be complete: {(p_complete_and_exp_yards[1]*100).round(0)}"
+        play_visualization = visualize_play(pass_play_input)
 
-    return jsonify({"expected_yards": exp_yards})
+    play_visualization_b64 = base64.b64encode(play_visualization.getvalue()).decode('utf-8')
+    return jsonify({"expected_yards": exp_yards, "play_visualization": play_visualization_b64})
 
-@app.route("/", methods=['GET'])
-def home():
-    return "<h1>Server is working</h1><p>"
-
-@app.route("/playVisualization", methods=['GET'])
-def get_play_visualization():
-    return send_file('play_visualization.png', mimetype='image/png')
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000, host='0.0.0.0')

@@ -123,10 +123,8 @@ def train_exp_yards_model_run():
     print("Expected yards model for running plays trained and saved successfully.")
 
 
-def predict_exp_yards_run(input_dict):
+def predict_exp_yards_run(input_dict, model):
     ''' Predict expected yards for a running play '''
-
-    model = joblib.load(MODEL_DIR / "exp_yards_model_run.joblib")
 
     # Prepare input data for prediction
     input_df = pd.DataFrame([input_dict])
