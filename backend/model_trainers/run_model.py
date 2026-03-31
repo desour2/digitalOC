@@ -98,7 +98,7 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
         "is_midfield_aggression", "is_deep_redzone",
         # --- NEW SEQUENCE FEATURES ---
         "prev_is_pass", "prev_is_run", "prev_yards_gained", 
-        "two_consecutive_runs", "two_consecutive_passes"
+        "two_consecutive_runs", "two_consecutive_passes", "defense_coverage_type"
     ]
 
     personnel_numeric = ["off_rb", "off_te", "off_wr", "def_dl", "def_lb", "def_db", "defenders_in_box"]
@@ -115,7 +115,7 @@ def train_run_models() -> Dict[str, Dict[str, Any]]:
     if X.empty:
         return {}
 
-    categorical_cols = ["posteam", "defteam", "roof", "surface", "qtr", "offense_formation", "off_group_bucket", "def_group_bucket"]
+    categorical_cols = ["posteam", "defteam", "roof", "surface", "qtr", "offense_formation", "off_group_bucket", "def_group_bucket", "defense_coverage_type"]
     existing_categorical = [col for col in categorical_cols if col in X.columns]
     X_processed = pd.get_dummies(X, columns=existing_categorical, drop_first=True).fillna(0)
     trained_models: Dict[str, Dict[str, Any]] = {}
@@ -209,7 +209,7 @@ def predict_run_metrics(situation, trained_models):
     situation_df["temp"] = 70  # default value
     situation_df["wind"] = 0  # default value
 
-    categorical_cols = ["posteam", "defteam", "roof", "surface", "qtr"]
+    categorical_cols = ["posteam", "defteam", "roof", "surface", "qtr", "defense_coverage_type"]
     situation_encoded = pd.get_dummies(
         situation_df,
         columns=categorical_cols,

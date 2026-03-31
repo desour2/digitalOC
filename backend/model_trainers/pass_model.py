@@ -300,6 +300,7 @@ def predict_pass_metrics(situation, trained_models):
          'prev_is_pass', 'prev_is_run', 'prev_yards_gained', 
          'two_consecutive_runs', 'two_consecutive_passes', 'defense_coverage_type'])
 
+    print(f"PASS MODEL EVALUATING AGAINST: {situation_df['defense_coverage_type'].iloc[0]}")
     # Add the football intelligence features
     situation_df = add_football_intelligence_features(situation_df)
 

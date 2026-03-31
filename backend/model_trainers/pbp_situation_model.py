@@ -20,7 +20,17 @@ def train_pbp_model():
     pbp_files = [pd.read_csv("../data/pbp_2024_0.csv", low_memory=False), pd.read_csv("../data/pbp_2024_1.csv", low_memory=False)]
     df = pd.concat(pbp_files, ignore_index=True).copy()
     df = add_additional_pbp_features(df)
+
+    part_df = pd.read_csv("../data/pbp_participation_2024.csv", low_memory=False)
+    # accounting for nflverse column naming differences 
+    part_df = part_df.rename(columns={"nflverse_game_id": "game_id"})
+    df = pd.merge(df, part_df[["game_id", "play_id", "defense_coverage_type"]], on=["game_id", "play_id"], how="left")
+    df['defense_coverage_type'] = df['defense_coverage_type'].fillna('UNKNOWN')
+
+
     df_filtered = df[df['play_type'].isin(['run', 'pass'])].copy()
+
+
 
     # Filtering garbage time
     df_filtered = df_filtered[df_filtered['score_differential'].abs() <= 16] 
@@ -47,7 +57,7 @@ def train_pbp_model():
         'posteam', 'defteam', 'elo_score',
         # --- NEW SEQUENCE FEATURES ---
         'prev_is_pass', 'prev_is_run', 'prev_yards_gained', 
-        'two_consecutive_runs', 'two_consecutive_passes'
+        'two_consecutive_runs', 'two_consecutive_passes', 'defense_coverage_type'
     ]
     
     X = df_filtered[X_features]
@@ -55,8 +65,7 @@ def train_pbp_model():
     y = df_filtered['is_pass_intent'] 
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    categorical_cols = ['posteam', 'defteam']
+    categorical_cols = ['posteam', 'defteam', 'defense_coverage_type']
     X_train_encoded = pd.get_dummies(X_train, columns=categorical_cols, drop_first=True)
     X_test_encoded = pd.get_dummies(X_test, columns=categorical_cols, drop_first=True)
     X_train_encoded, X_test_encoded = X_train_encoded.align(X_test_encoded, join='left', axis=1, fill_value=0)

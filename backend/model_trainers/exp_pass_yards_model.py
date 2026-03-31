@@ -50,14 +50,13 @@ def train_exp_yards_model_pass():
     def get_participation_info(row):
         game_id = row["game_id"]
         play_id = row["play_id"]
-        participation_row = pbp_participation_file[(pbp_participation_file["nflverse_game_id"] == game_id) & 
-                                                  (pbp_participation_file["play_id"] == play_id)]
+        participation_row = pbp_participation_file[(pbp_participation_file["nflverse_game_id"] == game_id) & (pbp_participation_file["play_id"] == play_id)]
         
         if not participation_row.empty:
-            return participation_row.iloc[0]["offense_formation"], participation_row.iloc[0]["offense_personnel"]
+            return participation_row.iloc[0]["offense_formation"], participation_row.iloc[0]["offense_personnel"], participation_row.iloc[0].get("defense_coverage_type", "UNKNOWN")
         else:
-            return np.nan, np.nan
-    df_filtered["offense_formation"], df_filtered["offense_personnel"] = zip(*df_filtered.apply(get_participation_info, axis=1))
+            return np.nan, np.nan, "UNKNOWN"
+    df_filtered["offense_formation"], df_filtered["offense_personnel"], df_filtered["defense_coverage_type"] = zip(*df_filtered.apply(get_participation_info, axis=1))
 
     # Situational features
     df_filtered["is_redzone"] = (df_filtered["yardline_100"] <= 20).astype(int)
@@ -73,8 +72,8 @@ def train_exp_yards_model_pass():
                     'yardline_100', 'goal_to_go', 'quarter_seconds_remaining', 'half_seconds_remaining', 
                     'game_seconds_remaining', 'score_differential', 'posteam_timeouts_remaining', 
                     'defteam_timeouts_remaining', 'offense_formation', 'offense_personnel',
-                    'is_redzone', 'is_goal_line', 'is_short_yardage']
-    categorical_cols = ['posteam', 'defteam', 'pass_length', 'pass_location', 'offense_formation', 'offense_personnel']
+                    'is_redzone', 'is_goal_line', 'is_short_yardage', 'defense_coverage_type']
+    categorical_cols = ['posteam', 'defteam', 'pass_length', 'pass_location', 'offense_formation', 'offense_personnel', 'defense_coverage_type']
 
     # ========== STAGE 1: Completion Probability Model ==========
     print("\n" + "="*60)
@@ -203,7 +202,7 @@ def predict_exp_yards_pass(input_dict, completion_model, yards_model):
     input_df = pd.DataFrame([input_dict])
 
     # One-hot encode categorical columns
-    categorical_cols = ['posteam', 'defteam', 'pass_length', 'pass_location', 'offense_formation', 'offense_personnel']
+    categorical_cols = ['posteam', 'defteam', 'pass_length', 'pass_location', 'offense_formation', 'offense_personnel', 'defense_coverage_type']
     input_df_encoded = pd.get_dummies(input_df, columns=categorical_cols, drop_first=True)
 
     # Align with completion model columns and predict P(complete)
