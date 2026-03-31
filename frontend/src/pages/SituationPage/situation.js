@@ -403,25 +403,7 @@ const Situation = () => {
                             <div style={{ fontSize: '24px', color: 'rgba(255,255,255,0.5)' }}>Select Team</div>
                         )}
                     </div>
-                    {/* Defensive Coverage Dropdown */}
-                    <div className="situation-row" style={{ marginTop: '15px', marginBottom: '15px' }}>
-                        <span className="situation-label" style={{ fontSize: '18px' }}>COVERAGE</span>
-                        <select 
-                            className="situation-input" 
-                            value={defenseCoverage}
-                            onChange={(e) => setDefenseCoverage(e.target.value)}
-                            style={{ width: '160px', fontSize: '16px' }}
-                        >
-                            <option value="UNKNOWN">Unknown</option>
-                            <option value="COVER_0">Cover 0 (Man)</option>
-                            <option value="COVER_1">Cover 1 (Man)</option>
-                            <option value="COVER_2">Cover 2 (Zone)</option>
-                            <option value="COVER_3">Cover 3 (Zone)</option>
-                            <option value="COVER_4">Cover 4 (Quarters)</option>
-                            <option value="COVER_6">Cover 6</option>
-                            <option value="2_MAN">2-Man</option>
-                        </select>
-                    </div>
+                    
                     {/* Points Display */}
                     <div className="points-display">
                         <input
@@ -500,7 +482,25 @@ const Situation = () => {
                             placeholder="10"
                         />
                     </div>
-                    
+                    {/* Defensive Coverage Dropdown */}
+                    <div className="situation-row" style={{ marginTop: '15px', marginBottom: '15px' }}>
+                        <span className="situation-label" style={{ fontSize: '18px' }}>COVERAGE TYPE</span>
+                        <select 
+                            className="situation-input" 
+                            value={defenseCoverage}
+                            onChange={(e) => setDefenseCoverage(e.target.value)}
+                            style={{ width: '160px', fontSize: '16px' }}
+                        >
+                            <option value="UNKNOWN">Unknown</option>
+                            <option value="COVER_0">Cover 0 (Man)</option>
+                            <option value="COVER_1">Cover 1 (Man)</option>
+                            <option value="COVER_2">Cover 2 (Zone)</option>
+                            <option value="COVER_3">Cover 3 (Zone)</option>
+                            <option value="COVER_4">Cover 4 (Quarters)</option>
+                            <option value="COVER_6">Cover 6</option>
+                            <option value="2_MAN">2-Man</option>
+                        </select>
+                    </div>
                     {/* Quarter & Time */}
                     <div className="situation-row">
                         <span className="situation-label" style={{ fontSize: '25px', margin: '0 10px' }}>QTR</span>
@@ -531,7 +531,7 @@ const Situation = () => {
                                     if ((value >= 0 && value <= 15) || e.target.value === '') {
                                         setMinutes(e.target.value);
                                         
-                                        // NEW: Auto-advance to seconds if 2 digits are typed or if they type 15!
+                                        // Auto-advance to seconds if 2 digits are typed or if they type 15
                                         if (e.target.value.length >= 2 || value === 15) {
                                             if (value === 15) setSeconds(0);
                                             if (secondsInputRef.current) secondsInputRef.current.focus();
@@ -566,7 +566,7 @@ const Situation = () => {
                         </div>
                     </div>
                 </div>
-
+                
                 {/* DEFENSE Card */}
                 <div className="card" style={{ background: defenseTeam ? getTeamGradient(defenseTeam) : 'rgba(20, 30, 60, 0.8)' }}>
                     <h2 className="card-title">DEFENSE</h2>
