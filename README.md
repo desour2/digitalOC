@@ -6,6 +6,12 @@ An intelligent NFL play-calling assistant that leverages machine learning and re
 
 DigitalOC is a full-stack web application that combines NFL play-by-play data, team Elo ratings, and Next Gen Stats to power ML models that predict the best offensive strategy. The app features an interactive React frontend where users can input game situations and receive AI-driven play recommendations with visual play diagrams.
 
+## Public Version
+
+You can access the public version of the app here: https://digital-oc-sigma.vercel.app
+
+**⚠️ Note: Since the backend is deployed on the Render Free Tier, response times may take long especially after not using the app for some time.**
+
 ## Features
 
 - **Interactive Situation Input**: Modern UI with team selection, down/distance, field position, score, time, and timeout tracking
@@ -18,6 +24,10 @@ DigitalOC is a full-stack web application that combines NFL play-by-play data, t
 - **Real-Time Results**: Side-by-side comparison of situation details and recommended plays
 
 ## Tech Stack
+
+### Deployment
+- **Frontend**: Vercel
+- **Backend**: Render (Free Tier)
 
 ### Frontend
 - **React 19.2** with React Router for navigation
