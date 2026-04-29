@@ -1,7 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './result.css';
-import {calculateGameSeconds, calculateHalfSeconds, calculateQtrSeconds} from '../SituationPage/situation';
+import {calculateGameSeconds, calculateHalfSeconds, calculateQtrSeconds, fetchSuggestedPlay, normalizeSuggestedPlays} from '../SituationPage/situation';
 
 
 const Result = () => {
@@ -9,6 +9,7 @@ const Result = () => {
     const navigate = useNavigate();
     const situationData = location.state;
     const [visualizationImage, setVisualizationImage] = useState(null);
+    const [selectedPlayIndex, setSelectedPlayIndex] = useState(0);
 
     // Editable state for situation details
     const [editableData, setEditableData] = useState({
@@ -26,6 +27,8 @@ const Result = () => {
         offenseTimeouts: situationData?.offenseTimeouts || '',
         defenseTimeouts: situationData?.defenseTimeouts || '',
         expYards: situationData?.expYards || '',
+        suggestedPlayType: situationData?.suggestedPlayType || '',
+        suggestedPlays: situationData?.suggestedPlays || [],
         playHistory: situationData?.playHistory || [], 
         actualPlayType: 'run', // lets the user select what play actually ran
         defenseCoverage: situationData?.defenseCoverage || 'UNKNOWN'
@@ -73,37 +76,47 @@ const Result = () => {
             defteam_timeouts_remaining: parseInt(editableData.defenseTimeouts),
             posteam: editableData.offenseTeam,
             defteam: editableData.defenseTeam,
-            defense_coverage_type: editableData.defenseCoverage,
-            forced_play_type: editableData.actualPlayType
+            defense_coverage_type: editableData.defenseCoverage
         };
 
-        let newExpYards = null;
-        let newPlayVisualization = null;
+        let newSuggestedPlayType = null;
+        let newSuggestedPlays = [];
 
         try {
-            const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/suggestPlay`, { 
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    current_situation: currentSituation,
-                    play_history: updatedPlayHistory
-                })
+            const data = await fetchSuggestedPlay({
+                current_situation: currentSituation,
+                play_history: updatedPlayHistory
             });
 
-            const data = await response.json();
-            newExpYards = data.expected_yards;
-            newPlayVisualization = data.play_visualization;
-            setVisualizationImage(`data:image/png;base64,${newPlayVisualization}`);
+            console.log("Backend response:", data);
+            newSuggestedPlayType = data.play_type || null;
+            newSuggestedPlays = normalizeSuggestedPlays(data);
+
+            if (newSuggestedPlays.length === 0) {
+                alert("The backend responded, but it did not include any suggested plays. Check the browser console for the full backend response.");
+                return;
+            }
+
+            setSelectedPlayIndex(0);
+            setVisualizationImage(
+                newSuggestedPlays[0]?.play_visualization
+                    ? `data:image/png;base64,${newSuggestedPlays[0].play_visualization}`
+                    : null
+            );
 
         } catch (error) {
             console.error("Error updating play visualization:", error);
+            alert(`Could not get updated play suggestions from the backend.\n\n${error.message}`);
+            return;
         }
 
         // Update local state
         setEditableData(prev => ({
             ...prev,
-            expYards: newExpYards,
-            playVisualization: newPlayVisualization,
+            suggestedPlayType: newSuggestedPlayType,
+            suggestedPlays: newSuggestedPlays,
+            expYards: newSuggestedPlays[0]?.expected_yards || '',
+            playVisualization: newSuggestedPlays[0]?.play_visualization || null,
             playHistory: updatedPlayHistory
         }));
     };
@@ -112,11 +125,41 @@ const Result = () => {
         console.log("Received situation data:", situationData);
 
         // Set play visualization image when the page loads or when situationData changes
-        if (situationData?.playVisualization) {
+        if (situationData?.suggestedPlays?.[0]?.play_visualization) {
+            setVisualizationImage(`data:image/png;base64,${situationData.suggestedPlays[0].play_visualization}`);
+        } else if (situationData?.playVisualization) {
             setVisualizationImage(`data:image/png;base64,${situationData.playVisualization}`);
         }
 
     }, [situationData]);
+
+    const formatLabel = (value) => {
+        return value
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, char => char.toUpperCase());
+    };
+
+    const selectedPlay = editableData.suggestedPlays[selectedPlayIndex];
+
+    const selectPlay = (play, index) => {
+        setSelectedPlayIndex(index);
+        setVisualizationImage(
+            play.play_visualization
+                ? `data:image/png;base64,${play.play_visualization}`
+                : null
+        );
+    };
+
+    const renderPlayData = (playData = {}) => {
+        return Object.entries(playData)
+            .filter(([, value]) => value !== null && value !== undefined && value !== '')
+            .map(([key, value]) => (
+                <div className="play-data-row" key={key}>
+                    <span>{formatLabel(key)}:</span>
+                    <strong>{value}</strong>
+                </div>
+            ));
+    };
 
 
     if (!situationData) {
@@ -167,7 +210,7 @@ const Result = () => {
                             />
                         </div>
                         <div className="detail-item">
-                            <span className="detail-label">Coverage:</span>
+                            <span className="detail-label">Defensive Coverage:</span>
                             <select 
                                 className="detail-input" 
                                 value={editableData.defenseCoverage}
@@ -230,7 +273,7 @@ const Result = () => {
                                 )}
                             </div>
                         </div>
-                        <div className="detail-item">
+                        <div className="detail-item" style={{ border: '2px dashed #ff69ff' }}>
                             <span className="detail-label">Play Type:</span>
                             <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
                                 <select 
@@ -335,8 +378,38 @@ const Result = () => {
 
                 <div className="right-column">
                     <div className="visualization-container">
+                        <h2>Suggested Plays:</h2>
+                        <div className="play-options">
+                            {editableData.suggestedPlays.length > 0 ? (
+                                editableData.suggestedPlays.map((play, index) => (
+                                    <button
+                                        type="button"
+                                        key={`${play.play_type}-${play.rank}`}
+                                        className={`play-option ${selectedPlayIndex === index ? 'active' : ''}`}
+                                        onClick={() => selectPlay(play, index)}
+                                    >
+                                        <span>#{play.rank} {play.play_type?.toUpperCase()}</span>
+                                        <strong>{play.expected_yards}</strong>
+                                    </button>
+                                ))
+                            ) : (
+                                <p className="no-plays-message">No play suggestions returned yet.</p>
+                            )}
+                        </div>
+
+                        {selectedPlay && (
+                            <div className="selected-play-details">
+                                <h2>Play #{selectedPlay.rank}</h2>
+                                {renderPlayData(selectedPlay.play_data)}
+                            </div>
+                        )}
+
                         <h2>Play Visualization:</h2>
-                        <img src={visualizationImage} alt="Play Visualization" className="visualization-image" />
+                        {visualizationImage ? (
+                            <img src={visualizationImage} alt="Play Visualization" className="visualization-image" />
+                        ) : (
+                            <p className="no-plays-message">No visualization available for this play.</p>
+                        )}
                         <br />
                         <h2>Expected Points Added: {editableData.expYards}</h2>
                     </div>

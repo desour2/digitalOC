@@ -28,3 +28,4 @@ backend/models/pbp_situation_model_meta.json
 backend/models/pbp_situation_model.joblib
 backend/models/run_models.joblib
 backend/model_trainers/__pycache__/upload_to_release.cpython-312.pyc
+backend/routeDrawer/__pycache__/playDraw.cpython-312.pyc

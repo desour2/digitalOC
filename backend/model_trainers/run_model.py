@@ -260,7 +260,81 @@ def predict_run_metrics(situation, trained_models):
 
     return run_metrics
 
+def predict_run_metric_candidates(situation, trained_models, top_k=3):
+    """
+    Return top-k candidate run plays instead of single prediction
+    """
 
+    situation_df = pd.DataFrame([situation], columns=[
+        'down', 'ydstogo', 'yardline_100', 'goal_to_go',
+        'quarter_seconds_remaining','half_seconds_remaining',
+        'game_seconds_remaining','score_differential',
+        'posteam_timeouts_remaining','defteam_timeouts_remaining',
+        'posteam','defteam',
+        'is_midfield_aggression','is_deep_redzone',
+        'prev_is_pass','prev_is_run','prev_yards_gained',
+        'two_consecutive_runs','two_consecutive_passes','defense_coverage_type'
+    ])
+
+    # same feature engineering as before
+    situation_df["is_redzone"] = (situation_df["yardline_100"] <= 20).astype(int)
+    situation_df["is_goal_line"] = ((situation_df["goal_to_go"] == 1) & (situation_df["yardline_100"] <= 10)).astype(int)
+    situation_df["is_short_yardage"] = ((situation_df["ydstogo"] <= 2) & (situation_df["down"] >= 3)).astype(int)
+
+    situation_df["qtr"] = 1
+    situation_df["shotgun"] = 0
+    situation_df["no_huddle"] = 0
+    situation_df["roof"] = "outdoors"
+    situation_df["surface"] = "grass"
+    situation_df["temp"] = 70
+    situation_df["wind"] = 0
+
+    situation_encoded = pd.get_dummies(
+        situation_df,
+        columns=["posteam","defteam","roof","surface","qtr","defense_coverage_type"],
+        drop_first=True
+    )
+
+    results = {}
+
+    # get top-k for each metric
+    for metric in ["run_gap", "run_location", "offense_formation", "personnel_off"]:
+        if metric not in trained_models:
+            continue
+
+        model_info = trained_models[metric]
+        model = model_info["model"]
+        model_columns = model_info["columns"]
+
+        for col in model_columns:
+            if col not in situation_encoded.columns:
+                situation_encoded[col] = 0
+
+        X = situation_encoded[model_columns]
+
+        probs = model.predict_proba(X)[0]
+        classes = model.classes_
+
+        top_indices = np.argsort(probs)[::-1][:top_k]
+
+        results[metric] = [
+            {"label": classes[i], "prob": float(probs[i])}
+            for i in top_indices
+        ]
+
+    # build 3 plays
+    plays = []
+    for i in range(top_k):
+        play = {
+            "run_gap": results["run_gap"][i]["label"],
+            "run_location": results["run_location"][i]["label"],
+            "offense_formation": results["offense_formation"][0]["label"],
+            "personnel_off": results["personnel_off"][0]["label"],
+            "confidence": results["run_gap"][i]["prob"]
+        }
+        plays.append(play)
+
+    return plays
 
 if __name__ == "__main__":
     # Train the Run models when running this file separately
