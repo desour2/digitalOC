@@ -338,7 +338,7 @@ const Result = () => {
                         <h2>Play Visualization:</h2>
                         <img src={visualizationImage} alt="Play Visualization" className="visualization-image" />
                         <br />
-                        <h2>Expected Yards: {editableData.expYards}</h2>
+                        <h2>Expected Points Added: {editableData.expYards}</h2>
                     </div>
                 </div>
             </div>
