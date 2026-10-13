@@ -6,6 +6,10 @@ An intelligent NFL play-calling assistant that leverages machine learning and re
 
 DigitalOC is a full-stack web application that combines NFL play-by-play data, team Elo ratings, and Next Gen Stats to power ML models that predict the best offensive strategy. The app features an interactive React frontend where users can input game situations and receive AI-driven play recommendations with visual play diagrams.
 
+## Experimental outcome comparison
+
+A new local baseline separates historical run/pass call probability from expected EPA and yards, evaluates both actions, and reports results on later seasons. See the [baseline setup and measured results](docs/decision-support-baseline.md) and [development roadmap](docs/model-development-plan.md). It now powers the main dashboard while validation continues; the legacy suggestion flow remains available.
+
 ## Public Version
 
 You can access the public version of the app here: https://digital-oc-sigma.vercel.app
@@ -102,7 +106,19 @@ python model_trainers/expected_pass_yards_model.py
 ```
 -  Trained model artifacts will be saved to `backend/models/`.
 
-### Backend Setup
+### Connected dashboard (default UI)
+
+From the repository root, start the dashboard API:
+
+```bash
+python3 -m backend.decision_support.api
+```
+
+Then run `npm start` inside `frontend/` and open http://localhost:3000. The dashboard API uses port **5001**, with persistent local sessions in SQLite. If the local model is missing, train it with `python3 -m backend.decision_support.train` first.
+
+See [connected dashboard setup, capabilities, and testing](docs/connected-dashboard.md). `/preview` retains the visual mockup; `/welcome` opens the legacy flow.
+
+### Legacy Backend Setup
 
 1. Clone the repository:
 ```bash

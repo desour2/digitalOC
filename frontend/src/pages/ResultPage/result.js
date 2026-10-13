@@ -1,6 +1,7 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './result.css';
+import {fieldPosition, updatePlayHistory} from './playHistory';
 import {calculateGameSeconds, calculateHalfSeconds, calculateQtrSeconds, fetchSuggestedPlay, normalizeSuggestedPlays} from '../SituationPage/situation';
 
 
@@ -10,6 +11,15 @@ const Result = () => {
     const situationData = location.state;
     const [visualizationImage, setVisualizationImage] = useState(null);
     const [selectedPlayIndex, setSelectedPlayIndex] = useState(0);
+
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [newDrive, setNewDrive] = useState(false);
+    const updateInFlight = useRef(false);
+    const previousSituation = useRef({
+        yardline_100: situationData?.ydLine100 ?? (situationData ? fieldPosition(situationData.ownOppMidfield, situationData.ydLine50) : null),
+        posteam: situationData?.offenseTeam,
+        defteam: situationData?.defenseTeam,
+    });
 
     // Editable state for situation details
     const [editableData, setEditableData] = useState({
@@ -41,84 +51,63 @@ const Result = () => {
         }));
     };
 
-    const submitUpdatedSituation = async () => {
-        // Calculate necessary values
-        const ydLine100 = (editableData.ownOppMidfield === "own" ? 100 - parseInt(editableData.ydLine50) : editableData.ownOppMidfield === "midfield" ? 50 : editableData.ownOppMidfield === "opp" ? parseInt(editableData.ydLine50) : undefined);
-        const goalToGo = (ydLine100 === parseInt(editableData.ydsToGo) ? 1 : 0);
-        const scoreDiff = parseInt(editableData.offensePoints) - parseInt(editableData.defensePoints);
-        const quarterSeconds = await calculateQtrSeconds(editableData.minutes, editableData.seconds);
-        const halfSeconds = await calculateHalfSeconds(editableData.quarter, editableData.minutes, editableData.seconds);
-        const gameSeconds = await calculateGameSeconds(editableData.quarter, editableData.minutes, editableData.seconds);
-
-        // --- SEQUENCE LOGIC ---
-        // Calculate yards gained by comparing the old yardline to the new yardline
-        // (this logic assumes the team hasn't crossed midfield/changed possession for simplicity right now)
-        const oldYdLine100 = situationData.ydLine100 || 50; 
-        const yardsGained = oldYdLine100 - ydLine100; 
-
-        // Add the completed play to our history array
-        const updatedPlayHistory = [
-            ...editableData.playHistory, 
-            { play_type: editableData.actualPlayType, yards_gained: yardsGained }
-        ];
-
-        // Format for Flask
-        const currentSituation = {
-            down: parseInt(editableData.down),
-            ydstogo: parseInt(editableData.ydsToGo),
-            yardline_100: ydLine100,
-            goal_to_go: goalToGo,
-            quarter_seconds_remaining: quarterSeconds,
-            half_seconds_remaining: halfSeconds,
-            game_seconds_remaining: gameSeconds,
-            score_differential: scoreDiff,
-            posteam_timeouts_remaining: parseInt(editableData.offenseTimeouts),
-            defteam_timeouts_remaining: parseInt(editableData.defenseTimeouts),
-            posteam: editableData.offenseTeam,
-            defteam: editableData.defenseTeam,
-            defense_coverage_type: editableData.defenseCoverage
-        };
-
-        let newSuggestedPlayType = null;
-        let newSuggestedPlays = [];
-
+    const submitUpdatedSituation = async (recordPlay = false) => {
+        if (updateInFlight.current) return;
+        updateInFlight.current = true;
+        setIsUpdating(true);
         try {
+            const ydLine100 = fieldPosition(editableData.ownOppMidfield, editableData.ydLine50);
+            const currentSituation = {
+                down: parseInt(editableData.down),
+                ydstogo: parseInt(editableData.ydsToGo),
+                yardline_100: ydLine100,
+                goal_to_go: ydLine100 === parseInt(editableData.ydsToGo) ? 1 : 0,
+                quarter_seconds_remaining: await calculateQtrSeconds(editableData.minutes, editableData.seconds),
+                half_seconds_remaining: await calculateHalfSeconds(editableData.quarter, editableData.minutes, editableData.seconds),
+                game_seconds_remaining: await calculateGameSeconds(editableData.quarter, editableData.minutes, editableData.seconds),
+                score_differential: parseInt(editableData.offensePoints) - parseInt(editableData.defensePoints),
+                posteam_timeouts_remaining: parseInt(editableData.offenseTimeouts),
+                defteam_timeouts_remaining: parseInt(editableData.defenseTimeouts),
+                posteam: editableData.offenseTeam,
+                defteam: editableData.defenseTeam,
+                defense_coverage_type: editableData.defenseCoverage,
+            };
+            const updatedPlayHistory = updatePlayHistory({
+                previous: previousSituation.current,
+                current: currentSituation,
+                history: editableData.playHistory,
+                playType: editableData.actualPlayType,
+                recordPlay,
+                newDrive,
+            });
             const data = await fetchSuggestedPlay({
                 current_situation: currentSituation,
-                play_history: updatedPlayHistory
+                play_history: updatedPlayHistory,
             });
+            const newSuggestedPlays = normalizeSuggestedPlays(data);
+            if (!newSuggestedPlays.length) throw new Error('The backend returned no suggested plays.');
 
-            console.log("Backend response:", data);
-            newSuggestedPlayType = data.play_type || null;
-            newSuggestedPlays = normalizeSuggestedPlays(data);
-
-            if (newSuggestedPlays.length === 0) {
-                alert("The backend responded, but it did not include any suggested plays. Check the browser console for the full backend response.");
-                return;
-            }
-
+            // Commit the next baseline only after a successful response; retries cannot add phantom plays.
+            previousSituation.current = currentSituation;
+            setNewDrive(false);
             setSelectedPlayIndex(0);
-            setVisualizationImage(
-                newSuggestedPlays[0]?.play_visualization
-                    ? `data:image/png;base64,${newSuggestedPlays[0].play_visualization}`
-                    : null
-            );
-
+            setVisualizationImage(newSuggestedPlays[0].play_visualization
+                ? `data:image/png;base64,${newSuggestedPlays[0].play_visualization}` : null);
+            setEditableData(prev => ({
+                ...prev,
+                suggestedPlayType: data.play_type,
+                suggestedPlays: newSuggestedPlays,
+                expYards: newSuggestedPlays[0].expected_yards ?? '',
+                playVisualization: newSuggestedPlays[0].play_visualization ?? null,
+                playHistory: updatedPlayHistory,
+            }));
         } catch (error) {
-            console.error("Error updating play visualization:", error);
-            alert(`Could not get updated play suggestions from the backend.\n\n${error.message}`);
-            return;
+            console.error('Error updating situation:', error);
+            alert(`Could not update the situation: ${error.message}`);
+        } finally {
+            updateInFlight.current = false;
+            setIsUpdating(false);
         }
-
-        // Update local state
-        setEditableData(prev => ({
-            ...prev,
-            suggestedPlayType: newSuggestedPlayType,
-            suggestedPlays: newSuggestedPlays,
-            expYards: newSuggestedPlays[0]?.expected_yards || '',
-            playVisualization: newSuggestedPlays[0]?.play_visualization || null,
-            playHistory: updatedPlayHistory
-        }));
     };
 
     useEffect(() => {
@@ -184,10 +173,20 @@ const Result = () => {
                     <div className="left-section">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                             <h2 style={{ margin: 0 }}>Situation Details:</h2>
-                            <button className="update-button" onClick={submitUpdatedSituation}>
-                                Update Situation
-                            </button>
+                            <div>
+                                <button className="update-button" disabled={isUpdating} onClick={() => submitUpdatedSituation(false)}>
+                                    Refresh Suggestions
+                                </button>
+                                <button className="update-button" disabled={isUpdating} onClick={() => submitUpdatedSituation(true)}>
+                                    Record Play & Update
+                                </button>
+                            </div>
                         </div>
+                        <label>
+                            <input type="checkbox" checked={newDrive} onChange={event => setNewDrive(event.target.checked)} />
+                            Start a new drive (clear play history)
+                        </label>
+                        <p>Recorded plays this drive: {editableData.playHistory.length}</p>
                         <div className="details-list">
                         <div className="detail-item">
                             <span className="detail-label">Offense:</span>
@@ -274,7 +273,7 @@ const Result = () => {
                             </div>
                         </div>
                         <div className="detail-item" style={{ border: '2px dashed #ff69ff' }}>
-                            <span className="detail-label">Play Type:</span>
+                            <span className="detail-label">Completed Play Type:</span>
                             <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
                                 <select 
                                     className="detail-input" 

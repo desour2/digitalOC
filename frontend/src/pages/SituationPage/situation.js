@@ -74,9 +74,11 @@ export async function fetchSuggestedPlay(payload) {
             body: JSON.stringify(payload)
         });
 
+        const requestId = response.headers.get('X-Request-ID');
+        console.info('suggestPlay completed', { requestId, status: response.status });
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`${REACT_APP_BACKEND_URL} returned ${response.status}: ${errorText}`);
+            throw new Error(`Request ${requestId || 'unknown'} returned ${response.status}: ${errorText}`);
         }
 
         return await response.json();

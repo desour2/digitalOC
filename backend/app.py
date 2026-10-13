@@ -1,6 +1,8 @@
 import base64
 import io
-from flask import Flask, jsonify, request
+import hashlib
+import math
+from flask import Flask, jsonify, request, g
 from flask_cors import CORS
 import joblib
 from pathlib import Path
@@ -16,16 +18,21 @@ from model_trainers.pass_model import predict_pass_metric_candidates
 from model_trainers.exp_run_yards_model import predict_exp_yards_run
 from model_trainers.exp_pass_yards_model import predict_exp_yards_pass
 from routeDrawer.playDraw import visualize_play
+from request_logging import install_request_logging
 
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # Enable CORS for all routes and origins
+CORS(app, resources={r"/*": {"origins": "*"}}, expose_headers=["X-Request-ID"])
+model_versions = {}
+install_request_logging(app, model_versions)
 
 
 # Load the PBP, run, pass, and expected yards models from GitHub Releases when the application starts
 def load_model_from_url(url: str):
-    with urllib.request.urlopen(url) as response:
-        buffer = io.BytesIO(response.read())
+    with urllib.request.urlopen(url, timeout=60) as response:
+        content = response.read()
+        buffer = io.BytesIO(content)
+    model_versions[url.rsplit("/", 1)[-1]] = hashlib.sha256(content).hexdigest()[:16]
     return joblib.load(buffer)
 
 BASE_URL = "https://github.com/nworobec/digitalOC/releases/download"
@@ -61,8 +68,26 @@ def suggest_play():
     """
 
     data = request.get_json()
+    if not isinstance(data, dict):
+        return jsonify({"error": "Expected a JSON object"}), 400
     current_situation = data.get("current_situation", {})
     play_history = data.get("play_history", [])
+    if not isinstance(current_situation, dict) or not isinstance(play_history, list):
+        return jsonify({"error": "current_situation must be an object and play_history a list"}), 400
+    numeric_fields = ["down", "ydstogo", "yardline_100", "goal_to_go", "quarter_seconds_remaining",
+                      "half_seconds_remaining", "game_seconds_remaining", "score_differential",
+                      "posteam_timeouts_remaining", "defteam_timeouts_remaining"]
+    for field in numeric_fields:
+        if field in current_situation:
+            value = current_situation[field]
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+                return jsonify({"error": f"{field} must be a finite number"}), 400
+    for play in play_history:
+        if (not isinstance(play, dict) or play.get("play_type") not in ("run", "pass")
+                or isinstance(play.get("yards_gained"), bool)
+                or not isinstance(play.get("yards_gained"), (int, float))
+                or not math.isfinite(play["yards_gained"])):
+            return jsonify({"error": "Each history entry needs a run/pass play_type and finite yards_gained"}), 400
 
     yardline = current_situation.get("yardline_100", 50)
     score_diff = current_situation.get("score_differential", 0)
@@ -119,11 +144,21 @@ def suggest_play():
         two_consecutive_passes,
         current_situation.get("defense_coverage_type", "UNKNOWN")
     ]
+    g.processed_situation = dict(zip([
+        "down", "ydstogo", "yardline_100", "goal_to_go", "quarter_seconds_remaining",
+        "half_seconds_remaining", "game_seconds_remaining", "score_differential",
+        "posteam_timeouts_remaining", "defteam_timeouts_remaining", "posteam", "defteam",
+        "is_midfield_aggression", "is_deep_redzone", "prev_is_pass", "prev_is_run",
+        "prev_yards_gained", "two_consecutive_runs", "two_consecutive_passes", "defense_coverage_type"
+    ], situation))
+    g.history_length = len(play_history)
 
     # Predict whether the play type should be a run or pass
     forced_play = current_situation.get('forced_play_type')
 
     if forced_play:
+        if not isinstance(forced_play, str) or forced_play.lower() not in ("run", "pass"):
+            return jsonify({"error": "forced_play_type must be run or pass"}), 400
         print(f"COACH OVERRIDE ACTIVATED: Forcing a {forced_play.upper()}")
         prediction = forced_play.lower()
         confidence = None
@@ -131,11 +166,11 @@ def suggest_play():
         # Predict whether the play type should be a run or pass
         prediction_int, confidence_raw = predict_play(situation, trained_model=pbp_model)
         prediction_int = to_scalar(prediction_int, int)
-        confidence_raw = to_scalar(confidence_raw, float)
 
         # 1 = Pass Intent (Passes, Sacks, Scrambles), 0 = Run Intent
         prediction = 'pass' if prediction_int == 1 else 'run'
-        confidence = confidence_raw.tolist() if hasattr(confidence_raw, 'tolist') else confidence_raw
+        selected_class_index = list(pbp_model.classes_).index(prediction_int)
+        confidence = float(confidence_raw[selected_class_index])
     
     play_outputs = []
 
@@ -268,6 +303,8 @@ def suggest_play():
             })
 
     return jsonify({
+        "request_id": g.request_id,
+        "model_versions": model_versions,
         "play_type": prediction,
         "model_confidence": confidence,
         "plays": play_outputs
