@@ -1,0 +1,45 @@
+.oc-scatter {padding:28px; margin:20px 0; min-width:0;}
+.oc-scatter-heading h2 {font-size:27px; margin:8px 0;}
+.oc-scatter-heading p,.oc-scatter-context,.oc-scatter-method {color:#626e63;}
+.oc-scatter-filter-form {padding:20px; background:#f7f8f3; border:1px solid var(--line); border-radius:12px; margin:24px 0;}
+.oc-scatter-filter-row {display:flex; flex-wrap:wrap; gap:16px; align-items:end;}
+.oc-scatter-filter-row + .oc-scatter-filter-row {margin-top:18px;}
+.oc-scatter label {display:grid; gap:6px; font-weight:600; font-size:12px;}
+.oc-scatter-filter-row>label {flex:1; min-width:110px;}
+.oc-scatter input[type=number],.oc-scatter select {width:100%; padding:10px; border:1px solid var(--line); border-radius:7px; background:white; color:var(--ink); font-size:14px; min-width:0;}
+.oc-scatter input[type=checkbox] {accent-color:#234b36; width:16px; height:16px; margin:0;}
+.oc-scatter fieldset {min-width:0; margin:0;}
+.oc-scatter legend {font-size:12px; font-weight:700; padding:0 5px;}
+.oc-scatter-choices {border:0; padding:0; display:flex; flex-wrap:wrap; align-items:center; gap:12px; flex:1;}
+.oc-scatter-choices legend {padding:0; margin-bottom:8px;}
+.oc-scatter-choices label {display:flex; align-items:center; gap:5px; white-space:nowrap; padding:8px 0;}
+.oc-scatter-choices button {padding:7px 12px; border:1px solid var(--line); border-radius:7px; color:var(--ink); background:white;}
+.oc-scatter-choices button[aria-pressed=true] {background:var(--green); color:white; border-color:var(--green);}
+.oc-scatter-axes {display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:16px; align-items:center;}
+.oc-scatter-axis {border:1px solid var(--line); border-radius:10px; padding:14px; display:grid; grid-template-columns:minmax(100px,1fr) minmax(130px,2fr); gap:12px;}
+.oc-scatter-options {display:flex; align-items:end; gap:16px; flex-wrap:wrap; padding:20px 0; border-bottom:1px solid var(--line);}
+.oc-scatter-options>label {max-width:185px; flex:1; min-width:120px;}
+.oc-scatter-options .oc-scatter-label-toggle {display:flex; align-items:center; gap:8px; padding:11px 0; max-width:none;}
+.oc-scatter-exports {display:flex; flex-wrap:wrap; gap:8px; margin-left:auto;}
+.oc-scatter-context {font-size:12px; margin:18px 0 10px!important;}
+.oc-scatter-result-heading {display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:13px; margin:18px 0;}
+.oc-scatter-result-heading span {color:#626e63;}
+.oc-scatter-chart-wrap {overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:white;}
+.oc-scatter-svg {display:block; width:100%; min-width:620px; height:auto;}
+.oc-scatter-point {cursor:pointer; outline:none;}
+.oc-scatter-point:focus .oc-scatter-marker,.oc-scatter-point:hover .oc-scatter-marker {opacity:1;}
+.oc-scatter-point:focus circle,.oc-scatter-point:hover circle {stroke:#142e20; stroke-width:4;}
+.oc-scatter-inspector {background:#f1f5eb; border:1px solid var(--line); border-radius:8px; padding:16px; display:flex; gap:20px; flex-wrap:wrap; margin:12px 0; min-height:56px; font-size:13px;}
+.oc-scatter-inspector>strong {color:#234b36;}
+.oc-scatter-inspector small {color:#626e63;}
+.oc-scatter-data,.oc-scatter-method {margin-top:20px; font-size:13px;}
+.oc-scatter summary {cursor:pointer; font-weight:600;}
+.oc-scatter-method p {margin-top:12px!important; line-height:1.7;}
+.oc-scatter-table-wrap {overflow-x:auto; margin-top:12px;}
+.oc-scatter table {border-collapse:collapse; width:100%; text-align:left; font-size:13px;}
+.oc-scatter th,.oc-scatter td {padding:10px 12px; border-bottom:1px solid var(--line);}
+.oc-scatter caption {text-align:left; color:#626e63; padding-bottom:12px;}
+.oc-scatter-loading {padding:24px 0;}
+.oc-scatter button:focus-visible,.oc-scatter select:focus-visible,.oc-scatter input:focus-visible,.oc-scatter summary:focus-visible {outline:3px solid #829bd5; outline-offset:3px;}
+@media(max-width:1150px) {.oc-scatter-axes {grid-template-columns:1fr;}.oc-scatter-swap {justify-self:start;}.oc-scatter-choices {flex-basis:100%;}.oc-scatter-exports {margin-left:0;}}
+@media(max-width:600px) {.oc-scatter {padding:16px;}.oc-scatter-filter-form {padding:14px;}.oc-scatter-axis {grid-template-columns:1fr;}.oc-scatter-filter-row>label {flex-basis:40%;}.oc-scatter-inspector {gap:10px; flex-direction:column;}}
