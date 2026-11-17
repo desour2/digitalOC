@@ -93,3 +93,47 @@ test('rules draft preserves source and stays unsaved until coach approval', asyn
     fireEvent.click(screen.getByText('Save coaching plan'));
     await waitFor(() => expect(save).toHaveBeenCalledWith('rules-context', content, 'coaching_rules'));
 });
+
+
+test('Gemini analysis is labeled separately and included in follow-up history', async () => {
+    const assistant = jest.fn().mockResolvedValue({reply: 'Saved facts: tied game.',
+        analysis: 'Consider protection before selecting the passing concept.', provider: 'gemini', plan: null, session_revision: 3});
+    render(<CoachesNotes {...props} session={{...session, revision: 3}} onAssistant={assistant}/>);
+    fireEvent.change(screen.getByLabelText('Message the session assistant'), {target: {value: 'Explain the options'}});
+    fireEvent.click(screen.getByText('Send message'));
+    expect(await screen.findByText('Gemini coaching assistant')).toBeInTheDocument();
+    expect(screen.getByText('Gemini analysis · review against the saved facts')).toBeInTheDocument();
+    expect(screen.getByText('Saved facts: tied game.')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Message the session assistant'), {target: {value: 'Why that option?'}});
+    fireEvent.click(screen.getByText('Send message'));
+    await waitFor(() => expect(assistant).toHaveBeenCalledTimes(2));
+    expect(assistant.mock.calls[1][1][1].content).toContain('Consider protection');
+    expect(assistant.mock.calls[1][1][1]).not.toHaveProperty('provider');
+});
+
+
+test('Gemini failure displays explicit fallback and keeps a reviewable draft', async () => {
+    const assistant = jest.fn().mockResolvedValue({reply: 'Prepared a backend draft.', plan: content,
+        session_revision: 3, context_id: 'fallback', provider: 'coaching_rules', proposal_source: 'coaching_rules',
+        provider_warning: 'Gemini timed out.', analysis: null});
+    const save = jest.fn();
+    render(<CoachesNotes {...props} session={{...session, coaching_plan: undefined, revision: 3}} onAssistant={assistant} onSave={save}/>);
+    fireEvent.change(screen.getByLabelText('Message the session assistant'), {target: {value: 'Draft a plan'}});
+    fireEvent.click(screen.getByText('Send message'));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Gemini analysis unavailable');
+    expect(screen.getByText('Save coaching plan')).toBeInTheDocument();
+    expect(screen.queryByText('Gemini coaching assistant')).not.toBeInTheDocument();
+    expect(save).not.toHaveBeenCalled();
+});
+
+test('coverage evidence stays separate from Gemini analysis', async () => {
+    const assistant = jest.fn().mockResolvedValue({reply: 'Fourth and 3 at Opponent 8.',
+        analysis: 'Compare a field goal with going for the conversion.', provider: 'gemini', plan: null,
+        coverage_context: 'No current defensive coverage is recorded. Historical sample: 207 labeled dropbacks.', session_revision: 3});
+    render(<CoachesNotes {...props} session={{...session, revision: 3}} onAssistant={assistant}/>);
+    fireEvent.change(screen.getByLabelText('Message the session assistant'), {target: {value: 'If we gain 12 yards?'}});
+    fireEvent.click(screen.getByText('Send message'));
+    expect(await screen.findByText('Coverage evidence · historical versus observed')).toBeInTheDocument();
+    expect(screen.getByText(/Historical sample: 207/)).toBeInTheDocument();
+    expect(screen.getByText('Compare a field goal with going for the conversion.')).toBeInTheDocument();
+});

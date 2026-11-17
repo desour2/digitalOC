@@ -52,12 +52,12 @@ export default function CoachesNotes({session, calls, busy, onGenerate, onSave, 
         setAssistantBusy(true);
         setAssistantError('');
         try {
-            const history = conversation.slice(-12).map(({role, content}) => ({role, content}));
+            const history = conversation.slice(-12).map(({role, content, analysis}) => ({role, content: [content, analysis].filter(Boolean).join('\n\n').slice(0, 4000)}));
             const result = await onAssistant(text, history);
             if (result.session_revision !== session.revision) {
                 throw new Error('The game session changed while the assistant was responding. Refresh and try again.');
             }
-            setConversation([...conversation.slice(-12), {role: 'user', content: text}, {role: 'assistant', content: result.reply, situation: result.situation_brief, provider: result.provider}]);
+            setConversation([...conversation.slice(-12), {role: 'user', content: text}, {role: 'assistant', content: result.reply, situation: result.situation_brief, provider: result.provider, analysis: result.analysis, providerWarning: result.provider_warning, coverageContext: result.coverage_context}]);
             if (result.plan) {
                 if (draft) {
                     setAssistantError('The assistant created another proposal, but it was not applied because your current edits are unsaved. Save or discard them before asking for another plan.');
@@ -91,14 +91,17 @@ export default function CoachesNotes({session, calls, busy, onGenerate, onSave, 
     const disabled = busy || working || assistantBusy;
     return <section className="oc-panel oc-coaches-notes">
         <div className="oc-panel-heading"><h2>Coaches Notes assistant</h2><span className="oc-tiny-badge">GROUNDED COACHING</span></div>
-        <p>Ask about this session or describe a game plan. Game facts and calculations come from the saved situation. The local model helps select eligible playbook options; plans use coaching rules. Plan proposals stay local to this review until you save them.</p>
+        <p>Ask about this session or describe a game plan. Game facts and calculations come from the saved situation. The configured assistant helps contextualize playbook options; plans use coaching rules. Gemini mode sends saved game context and this conversation to Google. Plan proposals stay local to this review until you save them.</p>
         <SituationSummary state={session.state} preferences={session.preferences}/>
         <section className="oc-assistant-chat" aria-label="Session conversation">
             <div className="oc-plan-section-heading"><h3>Talk through the next decision</h3><span>Session conversation</span></div>
             <div className="oc-assistant-messages" aria-live="polite">
                 {!conversation.length && <p className="oc-inline-help">Conversation is temporary and is not saved to the game session. Try asking about the current situation or requesting a draft game plan.</p>}
-                {conversation.map((entry, index) => <article className={`oc-assistant-message ${entry.role}`} key={index}><strong>{entry.role === 'user' ? 'You' : entry.provider === 'coaching_rules' ? 'Coaching rules · saved facts and playbook' : 'Playbook guidance · checked against saved situation'}</strong>
+                {conversation.map((entry, index) => <article className={`oc-assistant-message ${entry.role}`} key={index}><strong>{entry.role === 'user' ? 'You' : entry.provider === 'gemini' ? 'Gemini coaching assistant' : entry.provider === 'coaching_rules' ? 'Coaching rules · saved facts and playbook' : 'Playbook guidance · checked against saved situation'}</strong>
+                    {entry.providerWarning && <p role="alert" className="oc-status-panel">Gemini analysis unavailable: {entry.providerWarning} Showing backend guidance only.</p>}
                     {entry.situation && <div className="oc-response-context"><strong>Saved situation at response</strong><span>{entry.situation.score} · {entry.situation.clock} · {entry.situation.down_distance} · {entry.situation.field_position}</span><span>Timeouts: {entry.situation.timeouts} · Objective: {entry.situation.objective}</span></div>}
+                    {entry.analysis && <section className="oc-gemini-analysis"><strong>Gemini analysis · review against the saved facts</strong>{entry.analysis.split(/\n\s*\n/).map((paragraph, i) => <p key={i}>{paragraph}</p>)}</section>}
+                    {entry.coverageContext && <details className="oc-plan-evidence"><summary>Coverage evidence · historical versus observed</summary><p>{entry.coverageContext}</p></details>}
                     {entry.content.split(/\n\s*\n/).map((paragraph, i) => <p key={i}>{paragraph}</p>)}</article>)}
                 {assistantBusy && <p className="oc-inline-help" role="status">Preparing guidance for the saved situation…</p>}
             </div>

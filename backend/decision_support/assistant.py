@@ -10,6 +10,7 @@ from urllib.request import Request, urlopen
 from flask import jsonify, request
 
 from .evaluation import evaluate_session
+from .gemini_assistant import contextualize, GeminiUnavailable
 from .game import advance_play
 from .plans import context_id
 from .assistant_grounding import grounded_answer, render_selection
@@ -177,6 +178,7 @@ class IncompleteResponse(Exception):
 
 
 def register_assistant_routes(app, store, bundle, data_dir):
+    @app.errorhandler(GeminiUnavailable)
     @app.errorhandler(AssistantUnavailable)
     def assistant_unavailable(error):
         return jsonify(error=str(error)), 503
@@ -196,10 +198,30 @@ def register_assistant_routes(app, store, bundle, data_dir):
         if session.get("mode") == "historical_review":
             raise ValueError("The conversational assistant requires a live game session")
 
+        configured = os.environ.get("DIGITALOC_ASSISTANT_PROVIDER", "ollama").strip().lower()
+        if configured not in ("ollama", "gemini"):
+            raise AssistantUnavailable("DIGITALOC_ASSISTANT_PROVIDER must be ollama or gemini.")
         context = _session_context(session, bundle, data_dir)
         answer = grounded_answer(payload["message"], session, context)
         provider, model = "coaching_rules", None
-        if answer is None:
+        analysis = None
+        provider_warning = None
+        coverage_note = None
+        if configured == "gemini":
+            try:
+                result = contextualize(context, payload["message"], history, answer)
+                if answer is None:
+                    answer = render_selection({"focus": "calls" if result["call_ids"] else "clarify",
+                                               "call_ids": result["call_ids"]}, context)
+                analysis = result["analysis"]
+                coverage_note = result["coverage_context"]
+                provider, model = "gemini", result["model"]
+            except GeminiUnavailable as error:
+                provider_warning = str(error)
+                # Preserve useful facts/drafts; never label fallback as Gemini analysis.
+                if answer is None:
+                    answer = render_selection({"focus": "clarify", "call_ids": []}, context)
+        elif answer is None:
             model = os.environ.get("DIGITALOC_OLLAMA_MODEL", "llama3.2").strip()
             if not model or len(model) > 120:
                 raise AssistantUnavailable("Set DIGITALOC_OLLAMA_MODEL to an installed Ollama model name.")
@@ -232,5 +254,7 @@ def register_assistant_routes(app, store, bundle, data_dir):
             return jsonify(error="Session changed while the assistant was responding. Refresh and ask again."), 409
         return jsonify(**answer, context_id=context_id(session),
                        session_revision=session["revision"], situation_brief=situation_brief(session),
-                       provider=provider, model=model,
+                       provider=provider, model=model, analysis=analysis,
+                       configured_provider=configured, provider_warning=provider_warning, coverage_context=coverage_note,
+                       analysis_basis="model_authored_review_required" if analysis else None,
                        answer_basis="server_facts_and_catalog", proposal_source="coaching_rules" if answer["plan"] else None)
