@@ -181,9 +181,17 @@ def grounded_answer(message, session, context):
         if gain is None and not zero:
             text += ' These are examples; provide the actual net gain for an exact result.'
         if state['down'] == 3 and elapsed < state['quarter_seconds_remaining'] and all(value < state['ydstogo'] for value in gains):
-            text += (' Before the fourth-down snap, compare a field goal if within range, punting for field position, and going for it. '
-                     'A failed fourth-down conversion ends possession; you cannot then kick on that drive. '
-                     'Near the opponent goal line, consider the field-goal opportunity before risking a long fourth-down attempt. '
+            resulting_positions = [state['yardline_100'] - value for value in gains]
+            if all(0 < position <= 25 for position in resulting_positions):
+                text += (' The main fourth-down choice here is a field goal versus going for the first down. '
+                         'A field goal trades the remaining touchdown opportunity for a chance at three points; '
+                         'going for it keeps the drive alive only if you convert. Confirm kicker range and conditions. ')
+                if state['offense_score'] == state['defense_score']:
+                    text += 'A successful field goal would put your offense ahead by three. '
+            elif all(0 < position < 100 for position in resulting_positions):
+                text += (' Before the fourth-down snap, compare punting for field position, going for it, '
+                         'and a field goal only if the resulting spot is within the kicker’s range. ')
+            text += ('A failed fourth-down conversion ends possession; you cannot then kick on that drive. '
                      'No kicking or conversion model establishes the best choice.')
         return response(context, text, 'No game update was made. ' + (f'Applied {elapsed} elapsed seconds to the hypothetical only. ' if elapsed_match else 'Clock held constant because elapsed time was not supplied. ') + 'Assume no penalty or turnover. Recheck call eligibility for the resulting down, distance and field position.')
     if hypothetical:

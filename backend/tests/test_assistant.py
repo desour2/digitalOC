@@ -210,3 +210,16 @@ class AssistantTests(TestCase):
         bad = {'focus': 'calls', 'call_ids': ['flood'], 'probability': 0.99}
         with patch('backend.decision_support.assistant.urlopen', return_value=self.response(bad)):
             self.assertEqual(self.ask().status_code, 503)
+
+    def test_fourth_down_tradeoff_uses_resulting_field_position(self):
+        from backend.decision_support.assistant_grounding import grounded_answer
+        context = _session_context(self.session, None, self.root)
+        answer = grounded_answer('If we gain 12 yards, what next?', self.session, context)['reply']
+        self.assertIn('fourth and 3 at Opponent 8', answer)
+        self.assertIn('field goal versus going for', answer)
+        self.assertIn('ahead by three', answer)
+        self.assertNotIn('punting', answer)
+        # A loss moves the same current red-zone state out of the red zone.
+        answer = grounded_answer('If we lose 10 yards, what next?', self.session, context)['reply']
+        self.assertIn('fourth and 25 at Opponent 30', answer)
+        self.assertIn('punting for field position', answer)

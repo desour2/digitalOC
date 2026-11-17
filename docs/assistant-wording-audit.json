@@ -1,0 +1,436 @@
+{
+  "state": {
+    "posteam": "KC",
+    "defteam": "BUF",
+    "offense_score": 7,
+    "defense_score": 7,
+    "qtr": 2,
+    "quarter_seconds_remaining": 480,
+    "down": 3,
+    "ydstogo": 15,
+    "yardline_100": 20,
+    "posteam_timeouts_remaining": 3,
+    "defteam_timeouts_remaining": 3,
+    "coverage": "UNKNOWN",
+    "action_filter": "all"
+  },
+  "results": [
+    {
+      "case": "baseline",
+      "prompt": "What is the next best play if we do not get first down after 3rd and 15?",
+      "history": [],
+      "status": 200,
+      "seconds": 2.45,
+      "response": {
+        "context_id": "acc6259cccee37b45eeb41ec6b3be67f95fd5ab14fda826a8fcd50eca7dcc23d",
+        "model": null,
+        "plan": null,
+        "provider": "coaching_rules",
+        "reply": "Situation: KC 7 \u2013 BUF 7 \u00b7 Q2 \u00b7 8:00 \u00b7 Down 3 \u00b7 15 yards to go \u00b7 Opponent 20. 8 minutes and 0 seconds remain in quarter 2; timeouts: Offense 3 \u00b7 Defense 3. Objective: balanced.\n\nWhy it matters: Not reaching the line to gain on third down leads to fourth down, assuming no penalty or turnover. With a 0-yard gain, it would be fourth and 15 at Opponent 20. With a 10-yard gain, it would be fourth and 5 at Opponent 10. The game is tied; the actual gain and remaining clock are needed before choosing the next action.\n\nCall and read: Consider a field goal before selecting another offensive play, particularly if fourth down remains long. A successful field goal adds three points. Compare that opportunity with the need to retain possession given the score and time; confirm the kicker's range and conditions. A punt is generally less useful this close to the opponent's goal line. The available run/pass EPA estimates do not evaluate kicking or prove the best fourth-down choice.\n\nAdjustment: If the gain leaves a manageable fourth down and you choose to go for it, update the game situation and recheck eligible calls against the observed defense. A failed fourth-down conversion ends possession; you cannot then punt or attempt a field goal on that drive. These examples hold the clock constant and are not outcome predictions.",
+        "session_revision": 0,
+        "situation_brief": {
+          "action_filter": "all",
+          "anticipated_coverage": "UNKNOWN",
+          "clock": "Q2 \u00b7 8:00",
+          "clock_explanation": "8 minutes and 0 seconds remain in quarter 2",
+          "down_distance": "Down 3 \u00b7 15 yards to go",
+          "field_position": "Opponent 20",
+          "formation": "any",
+          "matchup": "KC vs BUF",
+          "objective": "balanced",
+          "personnel": "any",
+          "score": "KC 7 \u2013 BUF 7",
+          "timeouts": "Offense 3 \u00b7 Defense 3"
+        }
+      },
+      "manual_review": {
+        "verdict": "Pass for this case",
+        "expected": "Answer resulting fourth-down scenarios without asserting an optimal play.",
+        "observed": "Rules route supplied correct zero-gain and 10-yard-gain examples and possession consequences."
+      }
+    },
+    {
+      "case": "paraphrase",
+      "prompt": "Third-and-long comes up empty. What should we do next?",
+      "history": [],
+      "status": 200,
+      "seconds": 10.59,
+      "response": {
+        "context_id": "acc6259cccee37b45eeb41ec6b3be67f95fd5ab14fda826a8fcd50eca7dcc23d",
+        "model": "llama3.2",
+        "plan": null,
+        "provider": "ollama",
+        "reply": "Situation: Third-and-long comes up empty. The current situation is 3rd and 15, with 8 minutes remaining in the 2nd quarter.\n\nWhy it matters: Failing to convert 3rd and long leads to 4th and 15, which ends possession. We need to consider the field position and clock to make a decision.\n\nCall and read: Given the empty 3rd and long, we should consider going for it on 4th down. The available calls are flood, screen, verticals, draw, counter, mesh, outside zone, power, slant flat, sprint out, stick, and zone. We should read the underneath defender between stick and flat.\n\nAdjustment: Before making the call, we should consider the field goal opportunity. If we're in the opponent's red zone, a field goal could be a good option. However, since we're at the opponent's 20-yard line, a field goal might not be the best option. We should also consider the clock and the fact that we're on 4th down, which means we're running out of time.",
+        "session_revision": 0,
+        "situation_brief": {
+          "action_filter": "all",
+          "anticipated_coverage": "UNKNOWN",
+          "clock": "Q2 \u00b7 8:00",
+          "clock_explanation": "8 minutes and 0 seconds remain in quarter 2",
+          "down_distance": "Down 3 \u00b7 15 yards to go",
+          "field_position": "Opponent 20",
+          "formation": "any",
+          "matchup": "KC vs BUF",
+          "objective": "balanced",
+          "personnel": "any",
+          "score": "KC 7 \u2013 BUF 7",
+          "timeouts": "Offense 3 \u00b7 Defense 3"
+        }
+      },
+      "manual_review": {
+        "verdict": "Fail",
+        "expected": "No gain on third down gives fourth-and-15 at opponent 20; possession has not yet ended.",
+        "observed": "Said fourth-and-15 ends possession; listed all 12 plays as available; contradictory red-zone kicking rationale."
+      }
+    },
+    {
+      "case": "shorthand",
+      "prompt": "3&15 at their 20. Incomplete. Now what?",
+      "history": [],
+      "status": 200,
+      "seconds": 2.8,
+      "response": {
+        "context_id": "acc6259cccee37b45eeb41ec6b3be67f95fd5ab14fda826a8fcd50eca7dcc23d",
+        "model": "llama3.2",
+        "plan": null,
+        "provider": "ollama",
+        "reply": "Situation: 3rd and 15 at their 20, incomplete pass.\n\nWhy it matters: The offense needs to convert on 3rd and 15 to keep the drive alive, but the incomplete pass means they will face 4th and 15. If they fail to convert, the drive will end.\n\nCall and read: Run the Outside Zone (outside_zone) and press the edge to make the installed one-cut read.\n\nAdjustment: If the run is stopped, consider a field goal attempt from the opponent's 40-yard line, as the offense is already in the opponent's territory and a short field goal could be a good option.",
+        "session_revision": 0,
+        "situation_brief": {
+          "action_filter": "all",
+          "anticipated_coverage": "UNKNOWN",
+          "clock": "Q2 \u00b7 8:00",
+          "clock_explanation": "8 minutes and 0 seconds remain in quarter 2",
+          "down_distance": "Down 3 \u00b7 15 yards to go",
+          "field_position": "Opponent 20",
+          "formation": "any",
+          "matchup": "KC vs BUF",
+          "objective": "balanced",
+          "personnel": "any",
+          "score": "KC 7 \u2013 BUF 7",
+          "timeouts": "Offense 3 \u00b7 Defense 3"
+        }
+      },
+      "manual_review": {
+        "verdict": "Fail",
+        "expected": "Recognize an incompletion and fourth-and-15; a failed fourth-down conversion ends possession.",
+        "observed": "Recommended Outside Zone, then a field goal after the run is stopped; invented opponent 40 field position."
+      }
+    },
+    {
+      "case": "specific_gain",
+      "prompt": "If we come up short after gaining 12 yards on this third down, what is the next down and distance and where is the ball?",
+      "history": [],
+      "status": 200,
+      "seconds": 0.15,
+      "response": {
+        "context_id": "acc6259cccee37b45eeb41ec6b3be67f95fd5ab14fda826a8fcd50eca7dcc23d",
+        "model": null,
+        "plan": null,
+        "provider": "coaching_rules",
+        "reply": "Situation: KC 7 \u2013 BUF 7 \u00b7 Q2 \u00b7 8:00 \u00b7 Down 3 \u00b7 15 yards to go \u00b7 Opponent 20. 8 minutes and 0 seconds remain in quarter 2; timeouts: Offense 3 \u00b7 Defense 3. Objective: balanced.\n\nWhy it matters: Not reaching the line to gain on third down leads to fourth down, assuming no penalty or turnover. With a 0-yard gain, it would be fourth and 15 at Opponent 20. With a 10-yard gain, it would be fourth and 5 at Opponent 10. The game is tied; the actual gain and remaining clock are needed before choosing the next action.\n\nCall and read: Consider a field goal before selecting another offensive play, particularly if fourth down remains long. A successful field goal adds three points. Compare that opportunity with the need to retain possession given the score and time; confirm the kicker's range and conditions. A punt is generally less useful this close to the opponent's goal line. The available run/pass EPA estimates do not evaluate kicking or prove the best fourth-down choice.\n\nAdjustment: If the gain leaves a manageable fourth down and you choose to go for it, update the game situation and recheck eligible calls against the observed defense. A failed fourth-down conversion ends possession; you cannot then punt or attempt a field goal on that drive. These examples hold the clock constant and are not outcome predictions.",
+        "session_revision": 0,
+        "situation_brief": {
+          "action_filter": "all",
+          "anticipated_coverage": "UNKNOWN",
+          "clock": "Q2 \u00b7 8:00",
+          "clock_explanation": "8 minutes and 0 seconds remain in quarter 2",
+          "down_distance": "Down 3 \u00b7 15 yards to go",
+          "field_position": "Opponent 20",
+          "formation": "any",
+          "matchup": "KC vs BUF",
+          "objective": "balanced",
+          "personnel": "any",
+          "score": "KC 7 \u2013 BUF 7",
+          "timeouts": "Offense 3 \u00b7 Defense 3"
+        }
+      },
+      "manual_review": {
+        "verdict": "Fail \u2014 application routing",
+        "expected": "12-yard gain from third-and-15 at opponent 20 means fourth-and-3 at opponent 8.",
+        "observed": "Rules route ignored the explicit 12-yard gain, returning only generic zero/10-yard examples."
+      }
+    },
+    {
+      "case": "clock",
+      "prompt": "Does 8:00 mean we have eight seconds left? Are we in a must-score situation?",
+      "history": [],
+      "status": 200,
+      "seconds": 2.83,
+      "response": {
+        "context_id": "acc6259cccee37b45eeb41ec6b3be67f95fd5ab14fda826a8fcd50eca7dcc23d",
+        "model": "llama3.2",
+        "plan": null,
+        "provider": "ollama",
+        "reply": "Situation: The clock explanation indicates 8 minutes and 0 seconds remain in quarter 2, not seconds.\n\nWhy it matters: We are in a 2-minute situation with 8 minutes remaining in the half, and the score is tied 7-7. We need to score to take the lead.\n\nCall and read: Since we are in a must-score situation, we should consider going for it on fourth down instead of punting. We can use the shorter distance examples from the saved scenarios to inform our decision.\n\nAdjustment: We should consider a field goal attempt before attempting a fourth-down conversion, especially if we are in the opponent's red zone.",
+        "session_revision": 0,
+        "situation_brief": {
+          "action_filter": "all",
+          "anticipated_coverage": "UNKNOWN",
+          "clock": "Q2 \u00b7 8:00",
+          "clock_explanation": "8 minutes and 0 seconds remain in quarter 2",
+          "down_distance": "Down 3 \u00b7 15 yards to go",
+          "field_position": "Opponent 20",
+          "formation": "any",
+          "matchup": "KC vs BUF",
+          "objective": "balanced",
+          "personnel": "any",
+          "score": "KC 7 \u2013 BUF 7",
+          "timeouts": "Offense 3 \u00b7 Defense 3"
+        }
+      },
+      "manual_review": {
+        "verdict": "Fail",
+        "expected": "8:00 in Q2 is eight minutes; a 7-7 tie does not establish a must-score situation.",
+        "observed": "Corrected minutes initially but then described a two-minute and must-score situation."
+      }
+    },
+    {
+      "case": "false_score",
+      "prompt": "Since we are down seven with only eight seconds left, should we take a desperation shot?",
+      "history": [],
+      "status": 200,
+      "seconds": 3.05,
+      "response": {
+        "context_id": "acc6259cccee37b45eeb41ec6b3be67f95fd5ab14fda826a8fcd50eca7dcc23d",
+        "model": "llama3.2",
+        "plan": null,
+        "provider": "ollama",
+        "reply": "Situation: We are down seven points with only eight seconds left in the quarter, and we are on the opponent\\u2019s 20-yard line.\n\nWhy it matters: Taking a desperation shot with only eight seconds left could potentially tie the game, but it also risks turning the ball over or failing to convert, which would end the drive.\n\nCall and read: I would recommend taking the \"Flood concept\" (Call id: flood) and reading the deep to intermediate to flat according to the installed progression.\n\nAdjustment: If the defense is in a zone coverage, we could consider taking the \"Slant-flat\" (Call id: slant_flat) and using the installed leverage read between the slant and flat.",
+        "session_revision": 0,
+        "situation_brief": {
+          "action_filter": "all",
+          "anticipated_coverage": "UNKNOWN",
+          "clock": "Q2 \u00b7 8:00",
+          "clock_explanation": "8 minutes and 0 seconds remain in quarter 2",
+          "down_distance": "Down 3 \u00b7 15 yards to go",
+          "field_position": "Opponent 20",
+          "formation": "any",
+          "matchup": "KC vs BUF",
+          "objective": "balanced",
+          "personnel": "any",
+          "score": "KC 7 \u2013 BUF 7",
+          "timeouts": "Offense 3 \u00b7 Defense 3"
+        }
+      },
+      "manual_review": {
+        "verdict": "Fail",
+        "expected": "Flag that the premise conflicts with the saved 7-7, Q2 8:00 state, or explicitly treat it as a hypothetical.",
+        "observed": "Adopted down-seven/eight-seconds as the current situation."
+      }
+    },
+    {
+      "case": "field_position",
+      "prompt": "Are we at our own 20 or their 20? How many yards to the goal line versus the first-down marker?",
+      "history": [],
+      "status": 200,
+      "seconds": 6.65,
+      "response": {
+        "context_id": "acc6259cccee37b45eeb41ec6b3be67f95fd5ab14fda826a8fcd50eca7dcc23d",
+        "model": "llama3.2",
+        "plan": null,
+        "provider": "ollama",
+        "reply": "Situation: The current situation is that the offense is at the opponent\\u2019s 20-yard line, 15 yards away from the goal line.\n\nWhy it matters: Since we are at the opponent\\u2019s 20-yard line, we are in a fourth-down situation. The clock is 8 minutes and 0 seconds remaining in the quarter, and we have 3 timeouts remaining. Our objective is to convert on fourth down to maintain possession.\n\nCall and read: Since we are in a fourth-down situation, we should consider going for it on fourth down. However, we should also consider the field goal option if we are not confident in our ability to convert. In this case, we have several eligible calls, including flood, screen, verticals, draw, counter, mesh, outside zone, power, slant flat, sprint out, stick, and zone. We should read the defense and choose the call that best suits the situation.\n\nAdjustment: If we are unable to convert on fourth down, we will lose possession and the game will continue. We should also consider the possibility of a field goal attempt if we are not confident in our ability to convert on fourth down.",
+        "session_revision": 0,
+        "situation_brief": {
+          "action_filter": "all",
+          "anticipated_coverage": "UNKNOWN",
+          "clock": "Q2 \u00b7 8:00",
+          "clock_explanation": "8 minutes and 0 seconds remain in quarter 2",
+          "down_distance": "Down 3 \u00b7 15 yards to go",
+          "field_position": "Opponent 20",
+          "formation": "any",
+          "matchup": "KC vs BUF",
+          "objective": "balanced",
+          "personnel": "any",
+          "score": "KC 7 \u2013 BUF 7",
+          "timeouts": "Offense 3 \u00b7 Defense 3"
+        }
+      },
+      "manual_review": {
+        "verdict": "Fail",
+        "expected": "Opponent 20: 20 yards to goal line, 15 to first down, currently third down.",
+        "observed": "Claimed 15 yards to goal line and a current fourth-down situation."
+      }
+    },
+    {
+      "case": "fake_probability",
+      "prompt": "Give the exact conversion probability and EPA for Mesh against Buffalo Cover 2. Which play is guaranteed to work?",
+      "history": [],
+      "status": 200,
+      "seconds": 7.5,
+      "response": {
+        "context_id": "acc6259cccee37b45eeb41ec6b3be67f95fd5ab14fda826a8fcd50eca7dcc23d",
+        "model": "llama3.2",
+        "plan": null,
+        "provider": "ollama",
+        "reply": "Situation: Mesh sit against Buffalo Cover 2 in 2nd and 15 from the opponent\\u2019s 20-yard line.\n\nWhy it matters: Cover 2 is a zone coverage that requires the quarterback to read the safeties and the underneath defenders. The Mesh sit is a pass play that relies on the quarterback to read the underneath defenders and deliver the ball to the shallow crosser. If the safeties and underneath defenders are not aligned correctly, the Mesh sit may not be effective.\n\nCall and read: The Mesh sit is a pass play that requires the quarterback to read the underneath defenders and deliver the ball to the shallow crosser. The conversion probability for Mesh sit against Buffalo Cover 2 is 0.3048 (30.48%) based on historical data. The expected EPA for Mesh sit against Buffalo Cover 2 is -0.05997057193818733 (5.99 yards lost). There is no guaranteed play that will work in this situation.\n\nAdjustment: Given the limitations of the Mesh sit play, it may be necessary to consider alternative plays that can take advantage of the Buffalo Cover 2 defense. One possible adjustment could be to use a different pass play that targets the underneath defenders more effectively, such as the Flood concept or the Slant-flat combination. However, without more information about the Buffalo defense and the strengths and weaknesses of the Kansas City offense, it is difficult to make a definitive recommendation.",
+        "session_revision": 0,
+        "situation_brief": {
+          "action_filter": "all",
+          "anticipated_coverage": "UNKNOWN",
+          "clock": "Q2 \u00b7 8:00",
+          "clock_explanation": "8 minutes and 0 seconds remain in quarter 2",
+          "down_distance": "Down 3 \u00b7 15 yards to go",
+          "field_position": "Opponent 20",
+          "formation": "any",
+          "matchup": "KC vs BUF",
+          "objective": "balanced",
+          "personnel": "any",
+          "score": "KC 7 \u2013 BUF 7",
+          "timeouts": "Offense 3 \u00b7 Defense 3"
+        }
+      },
+      "manual_review": {
+        "verdict": "Fail",
+        "expected": "State that concept-specific conversion probability and EPA are unavailable; do not equate EPA with yards.",
+        "observed": "Invented 30.48% Mesh conversion probability; assigned negative concept EPA and described it as yards lost; changed third to second down."
+      }
+    },
+    {
+      "case": "fourth_down",
+      "prompt": "If our fourth-down attempt fails, should we kick a field goal on the next snap?",
+      "history": [],
+      "status": 200,
+      "seconds": 5.94,
+      "response": {
+        "context_id": "acc6259cccee37b45eeb41ec6b3be67f95fd5ab14fda826a8fcd50eca7dcc23d",
+        "model": "llama3.2",
+        "plan": null,
+        "provider": "ollama",
+        "reply": "Situation: If our fourth-down attempt fails, we are on fourth down again with 15 yards to go, and the clock is 8:00 in the second quarter.\n\nWhy it matters: Since we failed to convert fourth down, we are now in a similar situation again, with the same down and distance. Kicking a field goal on the next snap would give us three points, which could be crucial in a close game.\n\nCall and read: Kicking a field goal on the next snap is an eligible call, but we should consider the field position and the opponent's defense. If we can get a good angle on the kick, it could be a good opportunity to get points.\n\nAdjustment: Before making a decision, we should consider the opponent's defense and the field position. If the defense is weak in the red zone, it might be a good opportunity to kick a field goal. However, if the defense is strong, we might want to consider a different play.",
+        "session_revision": 0,
+        "situation_brief": {
+          "action_filter": "all",
+          "anticipated_coverage": "UNKNOWN",
+          "clock": "Q2 \u00b7 8:00",
+          "clock_explanation": "8 minutes and 0 seconds remain in quarter 2",
+          "down_distance": "Down 3 \u00b7 15 yards to go",
+          "field_position": "Opponent 20",
+          "formation": "any",
+          "matchup": "KC vs BUF",
+          "objective": "balanced",
+          "personnel": "any",
+          "score": "KC 7 \u2013 BUF 7",
+          "timeouts": "Offense 3 \u00b7 Defense 3"
+        }
+      },
+      "manual_review": {
+        "verdict": "Fail",
+        "expected": "A failed fourth-down conversion ends possession, absent a relevant penalty; no subsequent offensive kick on that drive.",
+        "observed": "Said offense is on fourth down again and can kick next snap."
+      }
+    },
+    {
+      "case": "history_conflict",
+      "prompt": "Use the current saved game, not the earlier example. What is the score, clock, and field position?",
+      "history": [
+        {
+          "role": "user",
+          "content": "Earlier hypothetical: KC trails 21-7, Q4 with 8 seconds remaining, at its own 20."
+        },
+        {
+          "role": "assistant",
+          "content": "That earlier hypothetical has KC trailing by 14 at its own 20 with eight seconds remaining."
+        }
+      ],
+      "status": 200,
+      "seconds": 8.53,
+      "response": {
+        "context_id": "acc6259cccee37b45eeb41ec6b3be67f95fd5ab14fda826a8fcd50eca7dcc23d",
+        "model": "llama3.2",
+        "plan": null,
+        "provider": "ollama",
+        "reply": "Situation: The current score is KC 7 \u2013 BUF 7, the clock is 8 minutes and 0 seconds remaining in quarter 2, and the field position is Opponent 20.\n\nWhy it matters: The score is tied, and the clock is running out, so the offense needs to convert on 3rd down to maintain possession and give itself a chance to win or tie the game. The field position is not ideal, but it's still within range for a potential game-winning drive. The defense has 3 timeouts remaining, which could be used to stop the drive or gain more time.\n\nCall and read: Run the Inside zone, press the installed aiming point and follow the blocking read.\n\nAdjustment: If the run is not successful, consider a Flood concept on 4th down, reading deep to intermediate to flat according to the installed progression.",
+        "session_revision": 0,
+        "situation_brief": {
+          "action_filter": "all",
+          "anticipated_coverage": "UNKNOWN",
+          "clock": "Q2 \u00b7 8:00",
+          "clock_explanation": "8 minutes and 0 seconds remain in quarter 2",
+          "down_distance": "Down 3 \u00b7 15 yards to go",
+          "field_position": "Opponent 20",
+          "formation": "any",
+          "matchup": "KC vs BUF",
+          "objective": "balanced",
+          "personnel": "any",
+          "score": "KC 7 \u2013 BUF 7",
+          "timeouts": "Offense 3 \u00b7 Defense 3"
+        }
+      },
+      "manual_review": {
+        "verdict": "Partial \u2014 facts correct, advice flawed",
+        "expected": "Use saved facts instead of the prior hypothetical; avoid inventing late-game urgency or unrelated play advice.",
+        "observed": "Correctly recovered 7-7, Q2 eight minutes, opponent 20, but then described game-winning urgency and recommended Inside Zone."
+      }
+    },
+    {
+      "case": "hypothetical",
+      "prompt": "Hypothetically, if we were trailing by four with 20 seconds left, would a field goal help? Do not change the saved game.",
+      "history": [],
+      "status": 200,
+      "seconds": 3.26,
+      "response": {
+        "context_id": "acc6259cccee37b45eeb41ec6b3be67f95fd5ab14fda826a8fcd50eca7dcc23d",
+        "model": "llama3.2",
+        "plan": null,
+        "provider": "ollama",
+        "reply": "Situation: Trailing by four with 20 seconds left in the game.\n\nWhy it matters: A field goal attempt could potentially cut the deficit to one point, giving the team a chance to win or tie the game.\n\nCall and read: Field goal attempt is not an option since the game is not saved and the clock is running out.\n\nAdjustment: If the game were saved, a field goal attempt could be considered if the team is in the opponent's red zone and has a reasonable chance of converting the extra point.",
+        "session_revision": 0,
+        "situation_brief": {
+          "action_filter": "all",
+          "anticipated_coverage": "UNKNOWN",
+          "clock": "Q2 \u00b7 8:00",
+          "clock_explanation": "8 minutes and 0 seconds remain in quarter 2",
+          "down_distance": "Down 3 \u00b7 15 yards to go",
+          "field_position": "Opponent 20",
+          "formation": "any",
+          "matchup": "KC vs BUF",
+          "objective": "balanced",
+          "personnel": "any",
+          "score": "KC 7 \u2013 BUF 7",
+          "timeouts": "Offense 3 \u00b7 Defense 3"
+        }
+      },
+      "manual_review": {
+        "verdict": "Fail",
+        "expected": "A field goal when trailing by four leaves a one-point deficit; distinguish hypothetical from saved state and discuss need for another possession.",
+        "observed": "Computed one-point deficit but claimed a field goal is unavailable because the game is not saved and confused field goal with extra point."
+      }
+    },
+    {
+      "case": "draft",
+      "prompt": "Draft three opening calls and two conditional counters for this saved situation. Use only eligible playbook calls and explain each read.",
+      "history": [],
+      "status": 200,
+      "seconds": 16.15,
+      "response": {
+        "context_id": "acc6259cccee37b45eeb41ec6b3be67f95fd5ab14fda826a8fcd50eca7dcc23d",
+        "model": "llama3.2",
+        "plan": null,
+        "provider": "ollama",
+        "reply": "Situation: The Kansas City Chiefs are facing the Buffalo Bills with 8 minutes remaining in the 2nd quarter, trailing 7-7, and needing a balanced approach to gain 15 yards on 3rd down. The offense is at the opponent's 20-yard line, and the clock is running.\n\nWhy it matters: Converting 3rd down is crucial to maintain possession and control the tempo of the game. A failure to convert will result in a 4th down attempt, which can be a high-risk, high-reward situation. The offense must weigh the risks and rewards of going for it versus punting the ball away.\n\nCall and read: Based on the situation, the following opening calls are eligible: flood, screen, and verticals. These calls offer a balance of passing and running options, allowing the offense to attack the Buffalo defense in different ways. The reads for these calls are as follows: flood - read deep to intermediate to flat according to the installed progression; screen - invite the rush, then deliver behind the releasing blockers; verticals - read safety leverage and the installed seam adjustments.\n\nAdjustment: If the offense decides to run a counter or outside zone, they should be prepared to adjust their blocking scheme to account for the Buffalo defense's alignment and movement. Additionally, if the offense chooses to go for it on 4th down, they should be prepared to adjust their play-calling strategy to account for the Buffalo defense's coverage and blitz packages.",
+        "session_revision": 0,
+        "situation_brief": {
+          "action_filter": "all",
+          "anticipated_coverage": "UNKNOWN",
+          "clock": "Q2 \u00b7 8:00",
+          "clock_explanation": "8 minutes and 0 seconds remain in quarter 2",
+          "down_distance": "Down 3 \u00b7 15 yards to go",
+          "field_position": "Opponent 20",
+          "formation": "any",
+          "matchup": "KC vs BUF",
+          "objective": "balanced",
+          "personnel": "any",
+          "score": "KC 7 \u2013 BUF 7",
+          "timeouts": "Offense 3 \u00b7 Defense 3"
+        }
+      },
+      "manual_review": {
+        "verdict": "Fail",
+        "expected": "Return a reviewable plan with requested three opening calls and two counters, or explain inability.",
+        "observed": "Returned plan=null despite explicit drafting request; called 7-7 trailing and three passing concepts a run/pass balance."
+      }
+    }
+  ]
+}
