@@ -152,3 +152,26 @@ class GeminiTests(TestCase):
             result = self.ask(message='If we gain 12 yards, how do our options change?').get_json()
         self.assertEqual(result['provider'], 'gemini')
         self.assertIn('No current defensive coverage', result['coverage_context'])
+
+    def test_guaranteed_points_claim_withheld_but_calculation_preserved(self):
+        analysis = ('You would face fourth and three at the opponent eight. Check whether the guaranteed three points '
+                    'outweigh the risk of going for it.')
+        value = helpers.FakeResponse({'candidates': [{'finishReason': 'STOP', 'content': {'parts': [{'text': json.dumps({
+            'analysis': analysis, 'call_ids': []})}]}}]})
+        with patch('backend.decision_support.gemini_assistant.urlopen', return_value=value):
+            result = self.ask(message='If we gain 12 yards, what next?').get_json()
+        self.assertIsNone(result['analysis'])
+        self.assertEqual(result['provider'], 'coaching_rules')
+        self.assertIn('scoring as certain', result['provider_warning'])
+        self.assertIn('fourth and 3 at Opponent 8', result['reply'])
+        self.assertIn('chance at three points', result['reply'])
+
+    def test_conditional_kicking_language_accepted(self):
+        analysis = ('You would face fourth and three at the opponent eight. A field goal offers a chance at three points; '
+                    'no field goal is guaranteed. Confirm protection and conditions before deciding.')
+        value = helpers.FakeResponse({'candidates': [{'finishReason': 'STOP', 'content': {'parts': [{'text': json.dumps({
+            'analysis': analysis, 'call_ids': []})}]}}]})
+        with patch('backend.decision_support.gemini_assistant.urlopen', return_value=value):
+            result = self.ask(message='If we gain 12 yards, what next?').get_json()
+        self.assertEqual(result['analysis'], analysis)
+        self.assertIsNone(result['provider_warning'])

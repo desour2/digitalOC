@@ -71,6 +71,8 @@ def contextualize(context, message, history, grounded):
         'Current saved facts and backend_grounded_answer take precedence over earlier chat. Clearly separate '
         'hypotheticals, coach observations and historical data. Do not invent player facts, coverage, statistics, '
         'conversion probabilities or concept EPA. Run/pass EPA does not rank named concepts or kicking choices. '
+        'A field goal is never guaranteed: say a chance at three points, or three points IF the kick is good. '
+        'Never describe points, a kick, or a conversion as guaranteed, automatic or risk-free. '
         'Do not repeat unsupported premises as saved facts. Ask for clarification when necessary. '
         'Only recommend call IDs from available_calls for the CURRENT situation; hypothetical future calls need '
         'a fresh eligibility check. List every current call you recommend in call_ids, at most three. '
@@ -170,4 +172,9 @@ def contextualize(context, message, history, grounded):
             raise ValueError('Invalid analysis or call IDs')
     except (KeyError, IndexError, TypeError, ValueError) as error:
         raise GeminiUnavailable('Gemini returned incomplete analysis or invalid play references. Retry the question; no changes were made.') from error
+    # A targeted claim check, not a general factual verifier. Preserve the rules answer on failure.
+    for match in re.finditer(r'\b(?:guaranteed|automatic|certain)\s+(?:three|3)\s+points\b', analysis, re.IGNORECASE):
+        prefix = analysis[max(0, match.start()-16):match.start()]
+        if not re.search(r'\b(?:not|never)\s+$', prefix, re.IGNORECASE):
+            raise GeminiUnavailable('Gemini described scoring as certain. That analysis was withheld; field goals are not guaranteed.')
     return {'analysis': analysis.strip(), 'call_ids': ids, 'model': model, 'coverage_context': note}
